@@ -31,17 +31,16 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
 }
 
 const Project = (name, toDos) => {
-    const addToProject = function (toDo) {
+    const add = function (toDo) {
         if (!toDos.includes(toDo)) {
             toDos.push(toDo);
             toDo.project = this;
         }
     }
 
-    const removeFromProject = function (toDo) {
+    const remove = function (toDo) {
         if (toDos.includes(toDo)) {
-            toDo.project = null;
-            const index = toDos.findIndex(toDo);
+            const index = toDos.findIndex(item => item === toDo);
             toDos.splice(index, 1);
         }
     }
@@ -49,14 +48,22 @@ const Project = (name, toDos) => {
     return {
         name,
         toDos,
-        addToProject,
-        removeFromProject
+        add,
+        remove
     }
 }
 
 const List = (function () {
     let toDos = [];
-    const projects = [];
+    let projects = [];
+
+    const getToDos = function () {
+        return toDos.map(item => item);
+    }
+
+    const getProjects = function () {
+        return projects.map(item => item);
+    }
 
     const createToDo = function (title, description, dueDate, priority, checklist = []) {
         const newToDo = ToDo(title, description, dueDate, priority, null, false, checklist);
@@ -71,26 +78,36 @@ const List = (function () {
     }
 
     const deleteTodo = function (toDo) {
-        const listIndex = toDos.findIndex(toDo);
-        toDos.splice(listIndex, 1);
-        if (toDo.project) {
-            const projectIndex = toDo.project.toDos.findIndex(toDo);
-            toDo.project.toDos.splice(projectIndex, 1);
+        if (toDos.includes(toDo)) {
+            const index = toDos.findIndex(item => item === toDo);
+            toDos.splice(index, 1);
+            if (toDo.project) {
+                toDo.project.remove(toDo);
+            };
         }
     }
 
     const deleteProject = function (proj) {
-        toDos = toDos.filter((todo) => todo.project === proj);
-        projIndex = projects.indexOf(proj);
-        projects.splice(projIndex, 1);
+        toDos.forEach((item) => {
+            if (item.project === proj) {
+                deleteTodo(item);
+            }
+        })
+        projectIndex = projects.findIndex(project => project === proj);
+        projects.splice(projectIndex, 1);
+    }
+
+    const getProjectItems = function (proj) {
+        return toDos.filter((item) => item.project === proj);
     }
 
     return {
-        toDos,
-        projects,
+        getToDos,
+        getProjects,
         createToDo,
         createProject,
         deleteTodo,
-        deleteProject
+        deleteProject,
+        getProjectItems
     }
 })();

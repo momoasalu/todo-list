@@ -1,11 +1,28 @@
 
-const ToDo = (title, description, dueDate, priority, project, completed, checklist) => {
-    /*const checklistItem = (name, checked) => {
-        const toggleComplete = {
+const ChecklistItem = (name, checked) => {
+    const toggleComplete = function () {
+        checked = checked ? false : true;
+    }
 
+    const markComplete = function () {
+        checked = true;
+    }
+
+    return {name, checked, toggleComplete, markComplete}
+}
+
+const ToDo = (title, description, dueDate, priority, project, completed, checklist) => {
+    const addChecklistItem = function (name) {
+        const newChecklistItem = ChecklistItem(name, false);
+        checklist.push(newChecklistItem);
+    }
+
+    const deleteChecklistItem = function (checklistItem) {
+        if (checklist.includes(checklistItem)) {
+            const index = checklist.findIndex((item) => item === checklistItem);
+            checklist.splice(index, 1);
         }
-        return {name, checked}
-    }*/
+    }
 
     const toggleComplete = function () {
         completed = completed ? false : true;
@@ -15,8 +32,6 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         priority = newPriority;
     }
 
-    //const addChecklistItem
-
     return {
         title, 
         description, 
@@ -25,6 +40,8 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         priority, 
         project, 
         completed,
+        addChecklistItem,
+        deleteChecklistItem,
         toggleComplete,
         changePriority
     }
@@ -65,8 +82,8 @@ const List = (function () {
         return projects.map(item => item);
     }
 
-    const createToDo = function (title, description, dueDate, priority, checklist = []) {
-        const newToDo = ToDo(title, description, dueDate, priority, null, false, checklist);
+    const createToDo = function (title, description, dueDate, priority) {
+        const newToDo = ToDo(title, description, dueDate, priority, null, false, []);
         toDos.push(newToDo);
         return newToDo;
     }

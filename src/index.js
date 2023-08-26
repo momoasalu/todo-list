@@ -17,6 +17,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
     const addChecklistItem = function (name) {
         const newChecklistItem = ChecklistItem(name, false);
         this.checklist.push(newChecklistItem);
+        return newChecklistItem;
     }
 
     const deleteChecklistItem = function (checklistItem) {
@@ -533,13 +534,78 @@ const UserInterface = (function () {
         })
     }
 
+    const renderCheckListItem = function (checkListItem, toDo) {
+        const index = toDo.checklist.indexOf(checkListItem);
+        const check = document.createElement('div');
+        check.setAttribute('data-order', index);
+        const checkText = document.createElement('p');
+        checkText.textContent = checkListItem.name;
+        check.classList.add('check-item');
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'delete';
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'edit';
+
+        const editPopUp = document.createElement('div');
+        const editForm = document.createElement('form');
+        const editInput = document.createElement('input');
+        editInput.setAttribute('type', 'text');
+        editInput.setAttribute('required', '');
+        const editConfirmBtn = document.createElement('button');
+        editConfirmBtn.textContent = 'confirm'
+        const editCancelBtn = document.createElement('button');
+        editCancelBtn.textContent = 'cancel';
+
+        editForm.appendChild(editInput);
+        editForm.appendChild(editConfirmBtn);
+        editForm.appendChild(editCancelBtn);
+        editPopUp.appendChild(editForm);
+
+        deleteBtn.addEventListener('click', () => {
+            toDo.deleteChecklistItem(checkListItem);
+            const container = check.parentElement;
+            check.remove();
+            let index = 0;
+            Array.from(container.querySelectorAll('.check-item')).forEach((node) => {
+                node.setAttribute('data-order', index);
+                index++;
+            });
+        });
+
+        editBtn.addEventListener('click', () => {
+            check.replaceWith(editPopUp);
+            editInput.defaultValue = checkText.textContent;
+        });
+
+        editConfirmBtn.addEventListener('click', (e) => {
+            if (editInput.checkValidity()) {
+                const checkListObject = toDo.checklist[check.getAttribute('data-order')];
+                checkListObject.name = editInput.value;
+                e.preventDefault();
+                checkText.textContent = editInput.value;
+                editPopUp.replaceWith(check);
+            }
+        });
+
+        editCancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            editForm.reset();
+            editPopUp.replaceWith(check);
+        })
+
+        check.appendChild(checkText);
+        check.appendChild(deleteBtn);
+        check.appendChild(editBtn);
+
+        return check;
+    }
+
     const renderChecklist = function (toDo) {
         const container = document.createElement('div');
-        container.classList.add('checklist-item');
+        container.classList.add('checklist');
         toDo.checklist.forEach((item) => {
-            const check = document.createElement('div');
-            check.textContent = item.name;
-            container.appendChild(check);
+            container.appendChild(renderCheckListItem(item, toDo));
         })
 
         return container;
@@ -563,9 +629,61 @@ const UserInterface = (function () {
         dueDate.classList.add('due-date');
         const checklist = renderChecklist(toDo);
 
+        const addChecklistItemBtn = document.createElement('button');
+        addChecklistItemBtn.textContent = '+';
+
+        const addPopUp = document.createElement('div');
+        const addForm = document.createElement('form');
+        const addInput = document.createElement('input');
+        addInput.setAttribute('type', 'text');
+        addInput.setAttribute('required', '');
+        const addConfirmBtn = document.createElement('button');
+        addConfirmBtn.textContent = 'confirm'
+        const addCancelBtn = document.createElement('button');
+        addCancelBtn.textContent = 'cancel';
+
+        addForm.appendChild(addInput);
+        addForm.appendChild(addConfirmBtn);
+        addForm.appendChild(addCancelBtn);
+        addPopUp.appendChild(addForm);
+
         const deleteBtn = document.createElement('button');
         deleteBtn.classList.add('delete');
         deleteBtn.textContent = 'delete';
+
+        const editBtn = document.createElement('button');
+        editBtn.classList.add('edit');
+        editBtn.textContent = 'edit';
+
+        checklist.appendChild(addChecklistItemBtn);
+
+        addChecklistItemBtn.addEventListener('click', () => {
+            addChecklistItemBtn.replaceWith(addPopUp);
+        });
+
+        addConfirmBtn.addEventListener('click', (e) => {
+            if (addInput.checkValidity()) {
+                e.preventDefault();
+                const checkListItem = toDo.addChecklistItem(addInput.value);
+                checklist.insertBefore(renderCheckListItem(checkListItem, toDo), addPopUp);
+                addPopUp.replaceWith(addChecklistItemBtn);
+
+                addForm.reset();
+                
+                new Masonry( main, {
+                    itemSelector: '.to-do',
+                    columnWidth: 300,
+                    horizontalOrder: true,
+                });
+            }
+        });
+
+        addCancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addForm.reset();
+            addPopUp.replaceWith(addChecklistItemBtn);
+        })
+
         deleteBtn.addEventListener('click', () => {
             List.deleteTodo(toDo);
             const toDoItem = deleteBtn.parentElement
@@ -579,9 +697,6 @@ const UserInterface = (function () {
             });
         })
 
-        const editBtn = document.createElement('button');
-        editBtn.classList.add('edit');
-        editBtn.textContent = 'edit';
         editBtn.addEventListener('click', () => {
             editDialog.showModal();
             const index = editBtn.parentElement.getAttribute('data-index');
@@ -702,12 +817,22 @@ const UserInterface = (function () {
         const editPopUp = document.createElement('div');
         const editForm = document.createElement('form');
 
-        const editProjectName = document.createElement('div');
-        const nameLabel = document.createElement('label');
-        nameLabel.setAttribute('for', 'project-name');
-        nameLabel.textContent = 'name';
+        const projectText = document.createElement('div');
+        projectText.classList.add('name');
+        projectText.textContent = newProject.name;
+
+        projectNode.classList.add('project');
+        projectNode.setAttribute('data-name', newProject.name);
+        projectNode.appendChild(projectText);
+        projectNode.appendChild(deleteBtn);
+        projectNode.appendChild(editBtn);
+        if (document.contains(createProjectBtn)) {
+            projects.insertBefore(projectNode, createProjectBtn);
+        } else {
+            projects.insertBefore(projectNode, createProjectPopUp);
+        }
+        
         const nameInput = document.createElement('input');
-        nameInput.id = 'project-name';
         nameInput.setAttribute('required', '');
         nameInput.setAttribute('type', 'text');
 
@@ -716,10 +841,8 @@ const UserInterface = (function () {
         confirmBtn.setAttribute('type', 'submit');
         const cancelBtn = document.createElement('button');
         cancelBtn.textContent = 'cancel';
-        editProjectName.appendChild(nameLabel);
-        editProjectName.appendChild(nameInput);
 
-        editForm.appendChild(editProjectName);
+        editForm.appendChild(nameInput);
         editForm.appendChild(confirmBtn);
         editForm.appendChild(cancelBtn);
         editPopUp.appendChild(editForm);
@@ -748,20 +871,20 @@ const UserInterface = (function () {
                 proj.name = nameInput.value;
 
                 projectNode.setAttribute('data-name', proj.name);
-                projectNode.querySelector('div').textContent = proj.name;
+                projectNode.querySelector('div.name').textContent = proj.name;
 
                 if (main.getAttribute('data-project') === oldName) {
                     main.setAttribute('data-project', proj.name);
                     const projectItems = main.querySelectorAll('.to-do');
                     Array.from(projectItems).forEach((item) => {
-                        item.querySelector('h5').textContent = proj.name;
+                        item.querySelector('.project').textContent = proj.name;
                     })
                 } else if (!main.hasAttribute('data-project')) {
                     let index = 0;
                     Array.from(document.querySelectorAll('.to-do')).forEach((item) => {
                         const project = List.getToDos()[index].project
                         if (project !== null && project.name === proj.name) {
-                            item.querySelector('h5').textContent = proj.name;
+                            item.querySelector('.project').textContent = proj.name;
                         }
                         index++;
                     })
@@ -776,9 +899,6 @@ const UserInterface = (function () {
             editForm.reset();
             editPopUp.replaceWith(projectNode);
         })
-
-        const projectText = document.createElement('div');
-        projectText.textContent = newProject.name;
 
         projectText.addEventListener('click', () => {
             main.setAttribute('data-project', newProject.name);
@@ -808,18 +928,6 @@ const UserInterface = (function () {
                 horizontalOrder: true,
             });
         })
-
-        projectNode.classList.add('project');
-        projectNode.setAttribute('data-name', newProject.name);
-        projectNode.appendChild(projectText);
-        projectNode.appendChild(deleteBtn);
-        projectNode.appendChild(editBtn);
-        if (document.contains(createProjectBtn)) {
-            projects.insertBefore(projectNode, createProjectBtn);
-        } else {
-            projects.insertBefore(projectNode, createProjectPopUp);
-        }
-        
 
         return newProject;
     }

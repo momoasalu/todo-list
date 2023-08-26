@@ -99,8 +99,8 @@ const List = (function () {
         return projects.map(item => item);
     }
 
-    const createToDo = function (title, description, dueDate, priority) {
-        const newToDo = ToDo(title, description, dueDate, priority, null, false, []);
+    const createToDo = function (title, description, dueDate, priority, project = null) {
+        const newToDo = ToDo(title, description, dueDate, priority, project, false, []);
         toDos.push(newToDo);
         return newToDo;
     }
@@ -273,7 +273,7 @@ const UserInterface = (function () {
             })
 
             createToDo(title, description, dueDate, priority);
-
+            createForm.reset();
             createDialog.close();
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -453,6 +453,11 @@ const UserInterface = (function () {
             createProjectForm.reset();
             createProjectPopUp.replaceWith(createProjectBtn);
         }
+    });
+
+    cancelProjectBtn.addEventListener('click', () => {
+        createProjectForm.reset();
+        createProjectPopUp.replaceWith(createProjectBtn);
     })
 
     const createBtn = document.createElement('button');
@@ -617,7 +622,13 @@ const UserInterface = (function () {
     }
 
     const createToDo = function (title, description, dueDate, priority) {
-        const newToDo = List.createToDo(title, description, dueDate, priority);
+        let newToDo;
+        if (main.hasAttribute('data-project')) {
+            const project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+            newToDo = List.createToDo(title, description, dueDate, priority, project);
+        } else {
+            newToDo = List.createToDo(title, description, dueDate, priority);
+        }
         main.appendChild(renderToDo(newToDo));
         const toDoItems = main.querySelectorAll('div.to-do');
         resetDataIndex(Array.from(toDoItems));
@@ -678,16 +689,18 @@ const UserInterface = (function () {
     }
 
     const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {
+        const oldProject = toDo.project;
         toDo.edit(newTitle, newDescription, newDueDate, newPriority, newProject);
         let toDoItem;
         if (main.hasAttribute('data-project')) {
+            if (oldProject !== newProject) {
+                renderProject(oldProject);
+                return;
+            }
             let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
-            console.log(List.getProjectItems(project));
             toDoItem = main.querySelector(`.to-do[data-index="${List.getProjectItems(project).findIndex((item) => item === toDo)}"]`);
-            console.log(toDoItem);
         } else {
             toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`);
-            console.log(List.getToDos())
         }
         toDoItem.textContent = '';
 

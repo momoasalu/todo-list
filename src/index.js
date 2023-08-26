@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isThisWeek, isToday } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
@@ -356,7 +356,6 @@ const UserInterface = (function () {
                 }
             });
             const project = projectName === 'none' ? null : List.getProjects().find((proj) => proj.name === projectName);
-            console.log(project);
 
             editToDo(toDo, title, description, dueDate, priority, project);
             editDialog.removeAttribute('data-index');
@@ -395,8 +394,56 @@ const UserInterface = (function () {
 
     const today = document.createElement('h2');
     today.textContent = 'today'; 
+
+    today.addEventListener('click', () => {
+        main.removeAttribute('data-project');
+        main.textContent = '';
+
+        List.getToDos().forEach((item) => {
+            if (isToday(item.dueDate)) {
+                const toDoItem = renderToDo(item);
+                const deleteBtn = toDoItem.querySelector('button.delete');
+                const editBtn = toDoItem.querySelector('button.edit');
+                toDoItem.removeChild(deleteBtn);
+                toDoItem.removeChild(editBtn);
+                main.appendChild(toDoItem);
+            }
+        })
+
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+
+    })
+
     const week = document.createElement('h2');
     week.textContent = 'this week';
+
+    week.addEventListener('click', () => {
+        main.removeAttribute('data-project');
+        main.textContent = '';
+
+        List.getToDos().forEach((item) => {
+            if (isThisWeek(item.dueDate)) {
+                const toDoItem = renderToDo(item);
+                const deleteBtn = toDoItem.querySelector('button.delete');
+                const editBtn = toDoItem.querySelector('button.edit');
+                toDoItem.removeChild(deleteBtn);
+                toDoItem.removeChild(editBtn);
+                main.appendChild(toDoItem);
+            }
+        })
+
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+    })
+
+
     const projects = document.createElement('div');
     const projectsHeader = document.createElement('h2');
     projectsHeader.textContent = 'projects';
@@ -512,6 +559,7 @@ const UserInterface = (function () {
         const checklist = renderChecklist(toDo);
 
         const deleteBtn = document.createElement('button');
+        deleteBtn.classList.add('delete');
         deleteBtn.textContent = 'delete';
         deleteBtn.addEventListener('click', () => {
             List.deleteTodo(toDo);
@@ -527,6 +575,7 @@ const UserInterface = (function () {
         })
 
         const editBtn = document.createElement('button');
+        editBtn.classList.add('edit');
         editBtn.textContent = 'edit';
         editBtn.addEventListener('click', () => {
             editDialog.showModal();
@@ -621,11 +670,6 @@ const UserInterface = (function () {
         });
     }
 
-    const renderProjectList = function() {
-        projects.textContent = '';
-
-    }
-
     const createToDo = function (title, description, dueDate, priority) {
         let newToDo;
         if (main.hasAttribute('data-project')) {
@@ -683,8 +727,6 @@ const UserInterface = (function () {
         })
 
         confirmBtn.addEventListener('click', (e) => {
-
-
             const proj = List.getProjects().find((item) => item.name === editPopUp.getAttribute('data-name'));
             const projIndex = List.getProjects().indexOf(proj);
             const modifiedProjectList = List.getProjects();

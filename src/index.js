@@ -551,6 +551,8 @@ const UserInterface = (function () {
 
         const title = document.createElement('h4');
         title.textContent = toDo.title;
+        const project = document.createElement('h5');
+        project.textContent = toDo.project === null ? '' : toDo.project.name;
         const description = document.createElement('p');
         description.textContent = toDo.description;
         const dueDate = document.createElement('p');
@@ -631,6 +633,7 @@ const UserInterface = (function () {
 
         container.classList.add('to-do');
         container.append(title);
+        container.append(project);
         container.append(description);
         container.append(dueDate);
         container.append(checklist);
@@ -738,12 +741,29 @@ const UserInterface = (function () {
             }
             if (nameInput.checkValidity() && !projectNames.includes(nameInput.value)) {
                 e.preventDefault();
+                const oldName = proj.name;
                 proj.name = nameInput.value;
 
                 newProjectNode.setAttribute('data-name', proj.name);
-                newProjectNode.textContent = proj.name;
-                newProjectNode.appendChild(deleteBtn);
-                newProjectNode.appendChild(editBtn);
+                newProjectNode.querySelector('div').textContent = proj.name;
+                console.log(List.getProjects());
+
+                if (main.getAttribute('data-project') === oldName) {
+                    main.setAttribute('data-project', proj.name);
+                    const projectItems = main.querySelectorAll('.to-do');
+                    Array.from(projectItems).forEach((item) => {
+                        item.querySelector('h5').textContent = proj.name;
+                    })
+                } else if (!main.hasAttribute('data-project')) {
+                    let index = 0;
+                    Array.from(document.querySelectorAll('.to-do')).forEach((item) => {
+                        const project = List.getToDos()[index].project
+                        if (project !== null && project.name === proj.name) {
+                            item.querySelector('h5').textContent = proj.name;
+                        }
+                        index++;
+                    })
+                }
 
                 editForm.reset();
                 editPopUp.replaceWith(newProjectNode);
@@ -755,8 +775,11 @@ const UserInterface = (function () {
             editPopUp.replaceWith(newProjectNode);
         })
 
-        newProjectNode.addEventListener('click', () => {
-            main.setAttribute('data-project', name);
+        const projectText = document.createElement('div');
+        projectText.textContent = newProject.name;
+
+        projectText.addEventListener('click', () => {
+            main.setAttribute('data-project', newProject.name);
             renderProject(newProject);
         })
 
@@ -778,16 +801,15 @@ const UserInterface = (function () {
             projects.removeChild(projectItem);
 
             new Masonry( main, {
-                // options
                 itemSelector: '.to-do',
                 columnWidth: 300,
                 horizontalOrder: true,
             });
         })
 
-        newProjectNode.textContent = newProject.name;
         newProjectNode.classList.add('project');
         newProjectNode.setAttribute('data-name', newProject.name);
+        newProjectNode.appendChild(projectText);
         newProjectNode.appendChild(deleteBtn);
         newProjectNode.appendChild(editBtn);
         if (document.contains(createProjectBtn)) {
@@ -818,6 +840,8 @@ const UserInterface = (function () {
 
         const title = document.createElement('h4');
         title.textContent = toDo.title;
+        const proj = document.createElement('h5');
+        proj.textContent = toDo.project === null ? '' : toDo.project.name;
         const description = document.createElement('p');
         description.textContent = toDo.description;
         const dueDate = document.createElement('p');
@@ -849,6 +873,7 @@ const UserInterface = (function () {
         });
 
         toDoItem.appendChild(title);
+        toDoItem.appendChild(proj);
         toDoItem.appendChild(description);
         toDoItem.appendChild(dueDate);
         toDoItem.appendChild(checklist);

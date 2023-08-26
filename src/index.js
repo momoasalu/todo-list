@@ -328,8 +328,14 @@ const UserInterface = (function () {
         });
         if (allValid) {
             e.preventDefault();
-            const toDo = List.getToDos()[editDialog.getAttribute('data-index')];
-            console.log(toDo);
+
+            let toDo;
+            if (main.hasAttribute('data-project')) {
+                let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+                toDo = List.getProjectItems(project)[editDialog.getAttribute('data-index')];
+            } else {
+                toDo = List.getToDos()[editDialog.getAttribute('data-index')];
+            }
 
             const title = editDialog.querySelector('#edit-title').value;
             const description = editDialog.querySelector('#edit-description').value;
@@ -381,6 +387,12 @@ const UserInterface = (function () {
 
     const home = document.createElement('h2');
     home.textContent = 'home';
+
+    home.addEventListener('click',() => {
+        main.removeAttribute('data-project');
+        renderAll();
+    })
+
     const today = document.createElement('h2');
     today.textContent = 'today'; 
     const week = document.createElement('h2');
@@ -527,8 +539,14 @@ const UserInterface = (function () {
                 project.textContent = proj.name;
                 projectSelect.appendChild(project);
             })
-
-            const toDo = List.getToDos()[index];
+            
+            let toDo;
+            if (main.hasAttribute('data-project')) {
+                const project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+                toDo = List.getProjectItems(project)[index];
+            } else {
+                toDo = List.getToDos()[index];
+            }
 
             const title = editDialog.querySelector('input#edit-title');
             title.defaultValue = toDo.title;
@@ -614,6 +632,12 @@ const UserInterface = (function () {
         const newProject = List.createProject(name);
         const newProjectNode = document.createElement('div');
         const deleteBtn = document.createElement('button');
+
+        newProjectNode.addEventListener('click', () => {
+            main.setAttribute('data-project', name);
+            renderProject(newProject);
+        })
+
         deleteBtn.textContent = 'delete';
         
         deleteBtn.addEventListener('click', () => {
@@ -655,7 +679,16 @@ const UserInterface = (function () {
 
     const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {
         toDo.edit(newTitle, newDescription, newDueDate, newPriority, newProject);
-        let toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`)
+        let toDoItem;
+        if (main.hasAttribute('data-project')) {
+            let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+            console.log(List.getProjectItems(project));
+            toDoItem = main.querySelector(`.to-do[data-index="${List.getProjectItems(project).findIndex((item) => item === toDo)}"]`);
+            console.log(toDoItem);
+        } else {
+            toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`);
+            console.log(List.getToDos())
+        }
         toDoItem.textContent = '';
 
         const title = document.createElement('h4');
@@ -688,8 +721,6 @@ const UserInterface = (function () {
             editDialog.showModal();
             const index = editBtn.parentElement.getAttribute('data-index');
             editDialog.setAttribute('data-index', index);
-            const form = editDialog.querySelector('form');
-            console.log(form);
         });
 
         toDoItem.appendChild(title);

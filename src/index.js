@@ -16,13 +16,13 @@ const ChecklistItem = (name, checked) => {
 const ToDo = (title, description, dueDate, priority, project, completed, checklist) => {
     const addChecklistItem = function (name) {
         const newChecklistItem = ChecklistItem(name, false);
-        checklist.push(newChecklistItem);
+        this.checklist.push(newChecklistItem);
     }
 
     const deleteChecklistItem = function (checklistItem) {
-        if (checklist.includes(checklistItem)) {
-            const index = checklist.findIndex((item) => item === checklistItem);
-            checklist.splice(index, 1);
+        if (this.checklist.includes(checklistItem)) {
+            const index = this.checklist.findIndex((item) => item === checklistItem);
+            this.checklist.splice(index, 1);
         }
     }
 
@@ -30,8 +30,23 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         completed = completed ? false : true;
     }
 
-    const changePriority = function (newPriority) {
-        priority = newPriority;
+    const edit = function (newTitle, newDescription, newDueDate, newPriority, newProject) {
+        this.title = newTitle;
+        this.description = newDescription;
+        this.dueDate = newDueDate;
+        this.priority = newPriority;
+        if (this.project !== newProject && newProject !== null) {
+            if (this.project !== null) {
+                this.project.remove(this);
+            };
+            newProject.add(this);
+            this.project = newProject;
+        } else if (newProject === null) {
+            if (this.project !== null) {
+                this.project.remove(this);
+            }; 
+            this.project = null;
+        }
     }
 
     return {
@@ -45,7 +60,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         addChecklistItem,
         deleteChecklistItem,
         toggleComplete,
-        changePriority
+        edit,
     }
 }
 
@@ -132,6 +147,148 @@ const List = (function () {
 })();
 
 const UserInterface = (function () {
+
+    const _populateForm = function (purpose) {
+        const form = document.createElement('form');
+
+        const title = document.createElement('div');
+        title.classList.add('input');
+        const titleLabel = document.createElement('label');
+        titleLabel.setAttribute('for', `${purpose}-title`);
+        titleLabel.textContent = 'title';
+        const titleInput = document.createElement('input');
+        titleInput.id = `${purpose}-title`;
+        titleInput.setAttribute('name', `${purpose}-title`);
+        titleInput.setAttribute('type', 'text');
+        title.appendChild(titleLabel);
+        title.appendChild(titleInput);
+
+        const description = document.createElement('div');
+        description.classList.add('input');
+        const descLabel = document.createElement('label');
+        descLabel.setAttribute('for', `${purpose}-description`);
+        descLabel.textContent = 'description';
+        const descInput = document.createElement('textarea');
+        descInput.id = `${purpose}-description`;
+        descInput.setAttribute('name', `${purpose}-description`);
+        description.appendChild(descLabel);
+        description.appendChild(descInput);
+
+        const priority = document.createElement('fieldset');
+        priority.classList.add('input');
+        priority.classList.add('radio');
+        const priorityLegend = document.createElement('legend');
+        priorityLegend.textContent = 'priority';
+        const highPriorityLabel = document.createElement('label');
+        highPriorityLabel.textContent = 'high';
+        highPriorityLabel.setAttribute('for', `${purpose}-high-priority`);
+        const highPriorityInput = document.createElement('input');
+        highPriorityInput.id = `${purpose}-high-priority`;
+        highPriorityInput.setAttribute('name', `${purpose}-priority`);
+        highPriorityInput.setAttribute('type', 'radio');
+        const medPriorityLabel = document.createElement('label');
+        medPriorityLabel.textContent = 'medium';
+        medPriorityLabel.setAttribute('for', `${purpose}-medium-priority`);
+        const medPriorityInput = document.createElement('input');
+        medPriorityInput.id = `${purpose}-medium-priority`;
+        medPriorityInput.setAttribute('name', `${purpose}-priority`);
+        medPriorityInput.setAttribute('type', 'radio');
+        const lowPriorityLabel = document.createElement('label');
+        lowPriorityLabel.textContent = 'low';
+        lowPriorityLabel.setAttribute('for', `${purpose}-low-priority`);
+        const lowPriorityInput = document.createElement('input');
+        lowPriorityInput.id = `${purpose}-low-priority`;
+        lowPriorityInput.setAttribute('name', `${purpose}-priority`);
+        lowPriorityInput.setAttribute('type', 'radio');
+        priority.appendChild(priorityLegend);
+        priority.appendChild(highPriorityInput);
+        priority.appendChild(highPriorityLabel);
+        priority.appendChild(medPriorityInput);
+        priority.appendChild(medPriorityLabel);
+        priority.appendChild(lowPriorityInput);
+        priority.appendChild(lowPriorityLabel);
+
+        const project = document.createElement('div');
+        project.classList.add('input');
+
+        form.appendChild(title);
+        form.appendChild(description);
+        form.appendChild(priority);
+        
+        return form;
+    }
+
+    const createDialog = document.createElement('dialog');
+    createDialog.classList.add('create');
+    createDialog.appendChild(_populateForm('create'));
+
+    const createClose = document.createElement('div');
+    createClose.classList.add('close');
+    const createConfirmBtn = document.createElement('button');
+    createConfirmBtn.textContent = 'confirm';
+    const createCancelBtn = document.createElement('button');
+    createCancelBtn.textContent = 'cancel';
+    createClose.appendChild(createConfirmBtn);
+    createClose.appendChild(createCancelBtn);
+
+    const createForm = createDialog.querySelector('form');
+    createForm.appendChild(createClose);
+
+    createConfirmBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        createToDo('hello', 'world', new Date(), 'high');
+        createDialog.close();
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+    })
+
+    createCancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = createDialog.querySelector('form');
+        form.reset();
+        createDialog.close();
+    })
+
+    const editDialog = document.createElement('dialog');
+    editDialog.classList.add('edit');
+    editDialog.appendChild(_populateForm('edit'));
+
+    const editClose = document.createElement('div');
+    createClose.classList.add('close');
+    const editConfirmBtn = document.createElement('button');
+    editConfirmBtn.textContent = 'confirm';
+    const editCancelBtn = document.createElement('button');
+    editCancelBtn.textContent = 'cancel';
+    editClose.appendChild(editConfirmBtn);
+    editClose.appendChild(editCancelBtn);
+
+    const editForm = editDialog.querySelector('form');
+    editForm.appendChild(editClose);
+
+    editConfirmBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const toDo = List.getToDos()[editDialog.getAttribute('data-index')];
+        console.log(toDo);
+        editToDo(toDo, 'hello', 'world', new Date(), 'low', null);
+        console.log(toDo);
+        editDialog.close();
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+    })
+
+    editCancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = editDialog.querySelector('form');
+        form.reset();
+        editDialog.close();
+    })
+
     const header = document.createElement('header');
     const aside = document.createElement('aside');
     const main = document.createElement('main');
@@ -150,12 +307,20 @@ const UserInterface = (function () {
     const projectsHeader = document.createElement('h2');
     projectsHeader.textContent = 'projects';
     projects.appendChild(projectsHeader);
+    const createBtn = document.createElement('button');
+    createBtn.textContent = 'create to-do';
+    createBtn.addEventListener('click', () => {
+        createDialog.showModal();
+    })
 
     aside.appendChild(home);
     aside.appendChild(today);
     aside.appendChild(week);
     aside.appendChild(projects);
+    aside.appendChild(createBtn);
 
+    document.body.appendChild(createDialog);
+    document.body.appendChild(editDialog);
     document.body.appendChild(header);
     document.body.appendChild(aside);
     document.body.appendChild(main);
@@ -189,7 +354,7 @@ const UserInterface = (function () {
         description.textContent = toDo.description;
         const dueDate = document.createElement('p');
         dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
-        container.classList.add(toDo.priority);
+        container.setAttribute('data-priority', toDo.priority);
         const checklist = renderChecklist(toDo);
 
         const deleteBtn = document.createElement('button');
@@ -202,16 +367,27 @@ const UserInterface = (function () {
             resetDataIndex(Array.from(toDoItems));
             new Masonry( main, {
                 itemSelector: '.to-do',
-                columnWidth: 300
+                columnWidth: 300,
+                horizontalOrder: true,
             });
         })
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'edit';
+        editBtn.addEventListener('click', () => {
+            editDialog.showModal();
+            const index = editBtn.parentElement.getAttribute('data-index');
+            editDialog.setAttribute('data-index', index);
+            const form = editDialog.querySelector('form');
+        });
 
         container.classList.add('to-do')
         container.append(title);
         container.append(description);
         container.append(dueDate);
         container.append(checklist);
-        container.append(deleteBtn)
+        container.append(deleteBtn);
+        container.append(editBtn);
 
         return container;
     }
@@ -226,7 +402,8 @@ const UserInterface = (function () {
         resetDataIndex(Array.from(toDoItems));
         new Masonry( main, {
             itemSelector: '.to-do',
-            columnWidth: 300
+            columnWidth: 300,
+            horizontalOrder: true,
         });
     }
 
@@ -240,7 +417,8 @@ const UserInterface = (function () {
         resetDataIndex(Array.from(toDoItems));
         new Masonry( main, {
             itemSelector: '.to-do',
-            columnWidth: 300
+            columnWidth: 300,
+            horizontalOrder: true,
         });
     }
 
@@ -251,7 +429,8 @@ const UserInterface = (function () {
         resetDataIndex(Array.from(toDoItems));
         new Masonry( main, {
             itemSelector: '.to-do',
-            columnWidth: 300
+            columnWidth: 300,
+            horizontalOrder: true,
         });
     }
 
@@ -279,7 +458,8 @@ const UserInterface = (function () {
             new Masonry( main, {
                 // options
                 itemSelector: '.to-do',
-                columnWidth: 300
+                columnWidth: 300,
+                horizontalOrder: true,
             });
         })
 
@@ -290,6 +470,53 @@ const UserInterface = (function () {
         projects.appendChild(newProjectNode);
 
         return newProject;
+    }
+
+    const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {
+        toDo.edit(newTitle, newDescription, newDueDate, newPriority, newProject);
+        let toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`)
+        toDoItem.textContent = '';
+
+        const title = document.createElement('h4');
+        title.textContent = toDo.title;
+        const description = document.createElement('p');
+        description.textContent = toDo.description;
+        const dueDate = document.createElement('p');
+        dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
+        toDoItem.setAttribute('data-priority', toDo.priority);
+        const checklist = renderChecklist(toDo);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'delete';
+        deleteBtn.addEventListener('click', () => {
+            List.deleteTodo(toDo);
+            const toDoItem = deleteBtn.parentElement
+            main.removeChild(toDoItem);
+            const toDoItems = main.querySelectorAll('div.to-do');
+            resetDataIndex(Array.from(toDoItems));
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 300,
+                horizontalOrder: true,
+            });
+        })
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'edit';
+        editBtn.addEventListener('click', () => {
+            editDialog.showModal();
+            const index = editBtn.parentElement.getAttribute('data-index');
+            editDialog.setAttribute('data-index', index);
+            const form = editDialog.querySelector('form');
+            console.log(form);
+        });
+
+        toDoItem.appendChild(title);
+        toDoItem.appendChild(description);
+        toDoItem.appendChild(dueDate);
+        toDoItem.appendChild(checklist);
+        toDoItem.appendChild(deleteBtn);
+        toDoItem.appendChild(editBtn);
     }
     
     return {

@@ -1,13 +1,13 @@
-import { format } from "date-fns";
+import { format, toDate } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
-        checked = checked ? false : true;
+        this.checked = checked ? false : true;
     }
 
     const markComplete = function () {
-        checked = true;
+        this.checked = true;
     }
 
     return {name, checked, toggleComplete, markComplete}
@@ -27,7 +27,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
     }
 
     const toggleComplete = function () {
-        completed = completed ? false : true;
+        this.completed = completed ? false : true;
     }
 
     const edit = function (newTitle, newDescription, newDueDate, newPriority, newProject) {
@@ -160,6 +160,7 @@ const UserInterface = (function () {
         titleInput.id = `${purpose}-title`;
         titleInput.setAttribute('name', `${purpose}-title`);
         titleInput.setAttribute('type', 'text');
+        titleInput.setAttribute('required', '');
         title.appendChild(titleLabel);
         title.appendChild(titleInput);
 
@@ -174,6 +175,19 @@ const UserInterface = (function () {
         description.appendChild(descLabel);
         description.appendChild(descInput);
 
+        const dueDate = document.createElement('div');
+        dueDate.classList.add('input');
+        const dueDateLabel = document.createElement('label');
+        dueDateLabel.setAttribute('for', `${purpose}-due-date`);
+        dueDateLabel.textContent = 'due date';
+        const dueDateInput = document.createElement('input');
+        dueDateInput.id = `${purpose}-due-date`;
+        dueDateInput.setAttribute('name', `${purpose}-due-date`);
+        dueDateInput.setAttribute('type', 'date');
+        dueDateInput.setAttribute('required', '');
+        dueDate.appendChild(dueDateLabel);
+        dueDate.appendChild(dueDateInput);
+
         const priority = document.createElement('fieldset');
         priority.classList.add('input');
         priority.classList.add('radio');
@@ -185,13 +199,16 @@ const UserInterface = (function () {
         const highPriorityInput = document.createElement('input');
         highPriorityInput.id = `${purpose}-high-priority`;
         highPriorityInput.setAttribute('name', `${purpose}-priority`);
+        highPriorityInput.setAttribute('value', 'high');
         highPriorityInput.setAttribute('type', 'radio');
+        highPriorityInput.setAttribute('checked', '');
         const medPriorityLabel = document.createElement('label');
         medPriorityLabel.textContent = 'medium';
         medPriorityLabel.setAttribute('for', `${purpose}-medium-priority`);
         const medPriorityInput = document.createElement('input');
         medPriorityInput.id = `${purpose}-medium-priority`;
         medPriorityInput.setAttribute('name', `${purpose}-priority`);
+        medPriorityInput.setAttribute('value', 'medium');
         medPriorityInput.setAttribute('type', 'radio');
         const lowPriorityLabel = document.createElement('label');
         lowPriorityLabel.textContent = 'low';
@@ -199,6 +216,7 @@ const UserInterface = (function () {
         const lowPriorityInput = document.createElement('input');
         lowPriorityInput.id = `${purpose}-low-priority`;
         lowPriorityInput.setAttribute('name', `${purpose}-priority`);
+        lowPriorityInput.setAttribute('value', 'low');
         lowPriorityInput.setAttribute('type', 'radio');
         priority.appendChild(priorityLegend);
         priority.appendChild(highPriorityInput);
@@ -208,11 +226,9 @@ const UserInterface = (function () {
         priority.appendChild(lowPriorityInput);
         priority.appendChild(lowPriorityLabel);
 
-        const project = document.createElement('div');
-        project.classList.add('input');
-
         form.appendChild(title);
         form.appendChild(description);
+        form.appendChild(dueDate);
         form.appendChild(priority);
         
         return form;
@@ -235,14 +251,36 @@ const UserInterface = (function () {
     createForm.appendChild(createClose);
 
     createConfirmBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        createToDo('hello', 'world', new Date(), 'high');
-        createDialog.close();
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
+        const inputs = createDialog.querySelectorAll('input');
+        let allValid = true;
+        Array.from(inputs).forEach((input) => {
+            if (!input.checkValidity()) {
+                console.log('invalid value!');
+                allValid = false;
+            }
         });
+        if (allValid) {
+            e.preventDefault();
+            const title = createDialog.querySelector('#create-title').value;
+            const description = createDialog.querySelector('#create-description').value;
+            const dueDate = createDialog.querySelector('#create-due-date').valueAsDate;
+            let priority;
+            const priorities = createDialog.querySelectorAll('input[type="radio"]');
+            Array.from(priorities).forEach((item) => {
+                if (item.checked) {
+                    priority = item.value;
+                }
+            })
+
+            createToDo(title, description, dueDate, priority);
+
+            createDialog.close();
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 300,
+                horizontalOrder: true,
+            });
+        }
     })
 
     createCancelBtn.addEventListener('click', (e) => {
@@ -256,6 +294,17 @@ const UserInterface = (function () {
     editDialog.classList.add('edit');
     editDialog.appendChild(_populateForm('edit'));
 
+    const editProject = document.createElement('div');
+    editProject.classList.add('input');
+    const editProjectLabel = document.createElement('label');
+    editProjectLabel.setAttribute('for', 'edit-project');
+    editProjectLabel.textContent = 'project';
+    const editProjectSelect = document.createElement('select');
+    editProjectSelect.id = 'edit-project';
+    editProjectSelect.setAttribute('name', 'edit-project');
+    editProject.appendChild(editProjectLabel);
+    editProject.appendChild(editProjectSelect);
+
     const editClose = document.createElement('div');
     createClose.classList.add('close');
     const editConfirmBtn = document.createElement('button');
@@ -266,24 +315,57 @@ const UserInterface = (function () {
     editClose.appendChild(editCancelBtn);
 
     const editForm = editDialog.querySelector('form');
+    editForm.appendChild(editProject);
     editForm.appendChild(editClose);
 
     editConfirmBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const toDo = List.getToDos()[editDialog.getAttribute('data-index')];
-        console.log(toDo);
-        editToDo(toDo, 'hello', 'world', new Date(), 'low', null);
-        console.log(toDo);
-        editDialog.close();
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
+        const inputs = editDialog.querySelectorAll('input');
+        let allValid = true;
+        Array.from(inputs).forEach((input) => {
+            if (!input.checkValidity()) {
+                allValid = false;
+            }
         });
+        if (allValid) {
+            e.preventDefault();
+            const toDo = List.getToDos()[editDialog.getAttribute('data-index')];
+            console.log(toDo);
+
+            const title = editDialog.querySelector('#edit-title').value;
+            const description = editDialog.querySelector('#edit-description').value;
+            const dueDate = editDialog.querySelector('#edit-due-date').valueAsDate;
+            let priority;
+            const priorities = editDialog.querySelectorAll('input[type="radio"]');
+            Array.from(priorities).forEach((item) => {
+                if (item.checked) {
+                    priority = item.value;
+                }
+            });
+            
+            let projectName
+            const projects = editDialog.querySelectorAll('option');
+            Array.from(projects).forEach((item) => {
+                if (item.selected) {
+                    projectName = item.value;
+                }
+            });
+            const project = projectName === 'none' ? null : List.getProjects().find((proj) => proj.name === projectName);
+            console.log(project);
+
+            editToDo(toDo, title, description, dueDate, priority, project);
+            editDialog.removeAttribute('data-index');
+            editDialog.close();
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 300,
+                horizontalOrder: true,
+            });
+        }
     })
 
     editCancelBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        editDialog.removeAttribute('data-index');
         const form = editDialog.querySelector('form');
         form.reset();
         editDialog.close();
@@ -309,6 +391,7 @@ const UserInterface = (function () {
     projects.appendChild(projectsHeader);
     const createBtn = document.createElement('button');
     createBtn.textContent = 'create to-do';
+
     createBtn.addEventListener('click', () => {
         createDialog.showModal();
     })
@@ -378,10 +461,49 @@ const UserInterface = (function () {
             editDialog.showModal();
             const index = editBtn.parentElement.getAttribute('data-index');
             editDialog.setAttribute('data-index', index);
-            const form = editDialog.querySelector('form');
+            const projectSelect = editDialog.querySelector('select');
+            projectSelect.textContent = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.textContent = 'none';
+            defaultOption.setAttribute('value', 'none');
+            projectSelect.appendChild(defaultOption);
+            List.getProjects().forEach((proj) => {
+                const project = document.createElement('option');
+                project.setAttribute('value', proj.name);
+                project.textContent = proj.name;
+                projectSelect.appendChild(project);
+            })
+
+            const toDo = List.getToDos()[index];
+
+            const title = editDialog.querySelector('input#edit-title');
+            title.defaultValue = toDo.title;
+            const description = editDialog.querySelector('textarea#edit-description');
+            description.defaultValue = toDo.description;
+            const dueDate = editDialog.querySelector('input#edit-due-date');
+            dueDate.valueAsDate = toDo.dueDate;
+            const priority = toDo.priority;
+            const priorities = editDialog.querySelectorAll('input[type="radio"]');
+            Array.from(priorities).forEach((item) => {
+                if (priority === item.value) {
+                    item.setAttribute('checked', '');
+                }
+            });
+            const project = toDo.project;
+            const projects = editDialog.querySelectorAll('option');
+            const none = editDialog.querySelector('option[value="none"]');
+            none.setAttribute('selected', '');
+            Array.from(projects).forEach((item) => {
+                if (project === null) {
+                    return;
+                }
+                if (project.name === item.textContent) {
+                    item.setAttribute('selected', '');
+                }
+            }); 
         });
 
-        container.classList.add('to-do')
+        container.classList.add('to-do');
         container.append(title);
         container.append(description);
         container.append(dueDate);
@@ -518,7 +640,31 @@ const UserInterface = (function () {
         toDoItem.appendChild(deleteBtn);
         toDoItem.appendChild(editBtn);
     }
+
+    const h = createProject('home');
+    const a = List.createToDo('clean', '', new Date(), 'high');
+    const b = List.createToDo('cook', '', new Date(), 'medium');
+    const c = List.createToDo('do homework', 'i need to do my homework to get good grades', new Date(), 'low');
+    const d = List.createToDo('feed cat', 'allergic to onions', new Date(), 'medium')
+
+    createProject('school');
+
+    h.add(a);
+    h.add(d);
+    a.addChecklistItem('living room');
+    a.addChecklistItem('kitchen');
+
+    c.addChecklistItem('math');
+    c.addChecklistItem('english');
+    c.addChecklistItem('science')
     
+    renderProject(h);
+    renderAll();
+
+    createToDo('title', 'description', new Date(), 'high');
+    createToDo('title', 'description', new Date(), 'high');
+
+
     return {
         createToDo,
         createProject,

@@ -255,7 +255,6 @@ const UserInterface = (function () {
         let allValid = true;
         Array.from(inputs).forEach((input) => {
             if (!input.checkValidity()) {
-                console.log('invalid value!');
                 allValid = false;
             }
         });
@@ -551,13 +550,17 @@ const UserInterface = (function () {
 
         const title = document.createElement('h4');
         title.textContent = toDo.title;
+        title.classList.add('title');
         const project = document.createElement('h5');
         project.textContent = toDo.project === null ? '' : toDo.project.name;
+        project.classList.add('project');
         const description = document.createElement('p');
         description.textContent = toDo.description;
+        description.classList.add('description');
         const dueDate = document.createElement('p');
         dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
         container.setAttribute('data-priority', toDo.priority);
+        dueDate.classList.add('due-date');
         const checklist = renderChecklist(toDo);
 
         const deleteBtn = document.createElement('button');
@@ -693,7 +696,7 @@ const UserInterface = (function () {
 
     const createProject = function (name) {
         const newProject = List.createProject(name);
-        const newProjectNode = document.createElement('div');
+        const projectNode = document.createElement('div');
         const deleteBtn = document.createElement('button');
         const editBtn = document.createElement('button');
         const editPopUp = document.createElement('div');
@@ -725,7 +728,7 @@ const UserInterface = (function () {
         
         editBtn.addEventListener('click', () => {
             editPopUp.setAttribute('data-name', editBtn.parentElement.getAttribute('data-name'));
-            newProjectNode.replaceWith(editPopUp);
+            projectNode.replaceWith(editPopUp);
             nameInput.defaultValue = newProject.name;
         })
 
@@ -744,9 +747,8 @@ const UserInterface = (function () {
                 const oldName = proj.name;
                 proj.name = nameInput.value;
 
-                newProjectNode.setAttribute('data-name', proj.name);
-                newProjectNode.querySelector('div').textContent = proj.name;
-                console.log(List.getProjects());
+                projectNode.setAttribute('data-name', proj.name);
+                projectNode.querySelector('div').textContent = proj.name;
 
                 if (main.getAttribute('data-project') === oldName) {
                     main.setAttribute('data-project', proj.name);
@@ -766,13 +768,13 @@ const UserInterface = (function () {
                 }
 
                 editForm.reset();
-                editPopUp.replaceWith(newProjectNode);
+                editPopUp.replaceWith(projectNode);
             }
         });
 
         cancelBtn.addEventListener('click', () => {
             editForm.reset();
-            editPopUp.replaceWith(newProjectNode);
+            editPopUp.replaceWith(projectNode);
         })
 
         const projectText = document.createElement('div');
@@ -807,15 +809,15 @@ const UserInterface = (function () {
             });
         })
 
-        newProjectNode.classList.add('project');
-        newProjectNode.setAttribute('data-name', newProject.name);
-        newProjectNode.appendChild(projectText);
-        newProjectNode.appendChild(deleteBtn);
-        newProjectNode.appendChild(editBtn);
+        projectNode.classList.add('project');
+        projectNode.setAttribute('data-name', newProject.name);
+        projectNode.appendChild(projectText);
+        projectNode.appendChild(deleteBtn);
+        projectNode.appendChild(editBtn);
         if (document.contains(createProjectBtn)) {
-            projects.insertBefore(newProjectNode, createProjectBtn);
+            projects.insertBefore(projectNode, createProjectBtn);
         } else {
-            projects.insertBefore(newProjectNode, createProjectPopUp);
+            projects.insertBefore(projectNode, createProjectPopUp);
         }
         
 
@@ -836,49 +838,13 @@ const UserInterface = (function () {
         } else {
             toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`);
         }
-        toDoItem.textContent = '';
 
-        const title = document.createElement('h4');
-        title.textContent = toDo.title;
-        const proj = document.createElement('h5');
-        proj.textContent = toDo.project === null ? '' : toDo.project.name;
-        const description = document.createElement('p');
-        description.textContent = toDo.description;
-        const dueDate = document.createElement('p');
-        dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
+        toDoItem.querySelector('.title').textContent = toDo.title;
+        toDoItem.querySelector('.project').textContent = toDo.project === null ? '' : toDo.project.name;
+        toDoItem.querySelector('.description').textContent = toDo.description;
+        toDoItem.querySelector('.due-date').textContent = format(toDo.dueDate, 'dd MMMM yyyy');
+        
         toDoItem.setAttribute('data-priority', toDo.priority);
-        const checklist = renderChecklist(toDo);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'delete';
-        deleteBtn.addEventListener('click', () => {
-            List.deleteTodo(toDo);
-            const toDoItem = deleteBtn.parentElement
-            main.removeChild(toDoItem);
-            const toDoItems = main.querySelectorAll('div.to-do');
-            resetDataIndex(Array.from(toDoItems));
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 300,
-                horizontalOrder: true,
-            });
-        })
-
-        const editBtn = document.createElement('button');
-        editBtn.textContent = 'edit';
-        editBtn.addEventListener('click', () => {
-            editDialog.showModal();
-            const index = editBtn.parentElement.getAttribute('data-index');
-            editDialog.setAttribute('data-index', index);
-        });
-
-        toDoItem.appendChild(title);
-        toDoItem.appendChild(proj);
-        toDoItem.appendChild(description);
-        toDoItem.appendChild(dueDate);
-        toDoItem.appendChild(checklist);
-        toDoItem.appendChild(deleteBtn);
-        toDoItem.appendChild(editBtn);
     }
 
     const h = createProject('home');

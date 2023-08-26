@@ -1,4 +1,4 @@
-import { format, toDate } from "date-fns";
+import { format } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
@@ -621,6 +621,11 @@ const UserInterface = (function () {
         });
     }
 
+    const renderProjectList = function() {
+        projects.textContent = '';
+
+    }
+
     const createToDo = function (title, description, dueDate, priority) {
         let newToDo;
         if (main.hasAttribute('data-project')) {
@@ -643,6 +648,70 @@ const UserInterface = (function () {
         const newProject = List.createProject(name);
         const newProjectNode = document.createElement('div');
         const deleteBtn = document.createElement('button');
+        const editBtn = document.createElement('button');
+        const editPopUp = document.createElement('div');
+        const editForm = document.createElement('form');
+
+        const editProjectName = document.createElement('div');
+        const nameLabel = document.createElement('label');
+        nameLabel.setAttribute('for', 'project-name');
+        nameLabel.textContent = 'name';
+        const nameInput = document.createElement('input');
+        nameInput.id = 'project-name';
+        nameInput.setAttribute('required', '');
+        nameInput.setAttribute('type', 'text');
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'confirm';
+        confirmBtn.setAttribute('type', 'submit');
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'cancel';
+        editProjectName.appendChild(nameLabel);
+        editProjectName.appendChild(nameInput);
+
+        editForm.appendChild(editProjectName);
+        editForm.appendChild(confirmBtn);
+        editForm.appendChild(cancelBtn);
+        editPopUp.appendChild(editForm);
+
+        editBtn.textContent = 'edit';
+        
+        editBtn.addEventListener('click', () => {
+            editPopUp.setAttribute('data-name', editBtn.parentElement.getAttribute('data-name'));
+            newProjectNode.replaceWith(editPopUp);
+            nameInput.defaultValue = newProject.name;
+        })
+
+        confirmBtn.addEventListener('click', (e) => {
+
+
+            const proj = List.getProjects().find((item) => item.name === editPopUp.getAttribute('data-name'));
+            const projIndex = List.getProjects().indexOf(proj);
+            const modifiedProjectList = List.getProjects();
+            modifiedProjectList.splice(projIndex, 1)
+            const projectNames = modifiedProjectList.map((item) => item.name);
+
+            if (projectNames.includes(nameInput.value)) {
+                nameInput.setCustomValidity('project name must be unique');
+            }
+            if (nameInput.checkValidity() && !projectNames.includes(nameInput.value)) {
+                e.preventDefault();
+                proj.name = nameInput.value;
+
+                newProjectNode.setAttribute('data-name', proj.name);
+                newProjectNode.textContent = proj.name;
+                newProjectNode.appendChild(deleteBtn);
+                newProjectNode.appendChild(editBtn);
+
+                editForm.reset();
+                editPopUp.replaceWith(newProjectNode);
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            editForm.reset();
+            editPopUp.replaceWith(newProjectNode);
+        })
 
         newProjectNode.addEventListener('click', () => {
             main.setAttribute('data-project', name);
@@ -676,8 +745,9 @@ const UserInterface = (function () {
 
         newProjectNode.textContent = newProject.name;
         newProjectNode.classList.add('project');
-        newProjectNode.classList.add(newProject.name);
+        newProjectNode.setAttribute('data-name', newProject.name);
         newProjectNode.appendChild(deleteBtn);
+        newProjectNode.appendChild(editBtn);
         if (document.contains(createProjectBtn)) {
             projects.insertBefore(newProjectNode, createProjectBtn);
         } else {

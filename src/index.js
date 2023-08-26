@@ -388,7 +388,61 @@ const UserInterface = (function () {
     const projects = document.createElement('div');
     const projectsHeader = document.createElement('h2');
     projectsHeader.textContent = 'projects';
+    const createProjectBtn = document.createElement('button');
+    createProjectBtn.textContent = 'create new project';
+    createProjectBtn.classList.add('create-project');
+
     projects.appendChild(projectsHeader);
+    projects.appendChild(createProjectBtn);
+
+    const createProjectPopUp = document.createElement('div');
+    const createProjectForm = document.createElement('form');
+    const newProjectName = document.createElement('div');
+    const projectNameLabel = document.createElement('label');
+    projectNameLabel.setAttribute('for', 'project-name');
+    projectNameLabel.textContent = 'name';
+    const projectNameInput = document.createElement('input')
+    projectNameInput.id = 'project-name';
+    projectNameInput.setAttribute('required', '')
+    projectNameInput.setAttribute('type', 'text')
+    const confirmProjectBtn = document.createElement('button');
+    confirmProjectBtn.textContent = 'confirm';
+    confirmProjectBtn.setAttribute('type', 'submit');
+    const cancelProjectBtn = document.createElement('button');
+    cancelProjectBtn.textContent = 'cancel';
+    newProjectName.appendChild(projectNameLabel);
+    newProjectName.appendChild(projectNameInput);
+    createProjectForm.appendChild(newProjectName);
+    createProjectForm.appendChild(confirmProjectBtn);
+    createProjectForm.appendChild(cancelProjectBtn);
+    createProjectPopUp.appendChild(createProjectForm);
+    
+    createProjectBtn.addEventListener('click', () => {
+        createProjectBtn.replaceWith(createProjectPopUp);
+    })
+
+    const isUnique = function (projName) {
+        let unique = true;
+        List.getProjects().forEach((item) => {
+            if (item.name === projName) {
+                unique = false;
+            }
+        })
+        return unique;
+    }
+
+    confirmProjectBtn.addEventListener('click', (e) => {
+        if (!isUnique(projectNameInput.value)) {
+            projectNameInput.setCustomValidity('project name must be unique');
+        }
+        if (projectNameInput.checkValidity() && isUnique(projectNameInput.value)) {
+            e.preventDefault();
+            createProject(projectNameInput.value);
+            createProjectForm.reset();
+            createProjectPopUp.replaceWith(createProjectBtn);
+        }
+    })
+
     const createBtn = document.createElement('button');
     createBtn.textContent = 'create to-do';
 
@@ -589,7 +643,12 @@ const UserInterface = (function () {
         newProjectNode.classList.add('project');
         newProjectNode.classList.add(newProject.name);
         newProjectNode.appendChild(deleteBtn);
-        projects.appendChild(newProjectNode);
+        if (document.contains(createProjectBtn)) {
+            projects.insertBefore(newProjectNode, createProjectBtn);
+        } else {
+            projects.insertBefore(newProjectNode, createProjectPopUp);
+        }
+        
 
         return newProject;
     }

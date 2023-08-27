@@ -1,13 +1,15 @@
-import { format, isThisWeek, isToday } from "date-fns";
+import { format, formatISO, isThisWeek, isToday, toDate } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
         this.checked = checked ? false : true;
+        StorageController.updateStorage();
     }
 
     const markComplete = function () {
         this.checked = true;
+        StorageController.updateStorage();
     }
 
     return {name, checked, toggleComplete, markComplete}
@@ -17,6 +19,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
     const addChecklistItem = function (name) {
         const newChecklistItem = ChecklistItem(name, false);
         this.checklist.push(newChecklistItem);
+        StorageController.updateStorage();
         return newChecklistItem;
     }
 
@@ -24,11 +27,13 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         if (this.checklist.includes(checklistItem)) {
             const index = this.checklist.findIndex((item) => item === checklistItem);
             this.checklist.splice(index, 1);
+            StorageController.updateStorage();
         }
     }
 
     const toggleComplete = function () {
         this.completed = completed ? false : true;
+        StorageController.updateStorage();
     }
 
     const edit = function (newTitle, newDescription, newDueDate, newPriority, newProject) {
@@ -48,6 +53,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
             }; 
             this.project = null;
         }
+        StorageController.updateStorage();
     }
 
     return {
@@ -80,11 +86,17 @@ const Project = (name, toDos) => {
         }
     }
 
+    const changeName = function (newName) {
+        this.name = newName;
+        StorageController.updateStorage();
+    }
+
     return {
         name,
         toDos,
         add,
-        remove
+        remove,
+        changeName,
     }
 }
 
@@ -103,12 +115,14 @@ const List = (function () {
     const createToDo = function (title, description, dueDate, priority, project = null) {
         const newToDo = ToDo(title, description, dueDate, priority, project, false, []);
         toDos.push(newToDo);
+        StorageController.updateStorage();
         return newToDo;
     }
 
     const createProject = function (name) {
         const newProject = Project(name, []);
         projects.push(newProject);
+        StorageController.updateStorage();
         return newProject;
     }
 
@@ -119,6 +133,7 @@ const List = (function () {
             if (toDo.project) {
                 toDo.project.remove(toDo);
             };
+            StorageController.updateStorage();
         }
     }
 
@@ -130,6 +145,7 @@ const List = (function () {
         })
         const projectIndex = projects.findIndex(project => project === proj);
         projects.splice(projectIndex, 1);
+        StorageController.updateStorage();
     }
 
     const getProjectItems = function (proj) {
@@ -851,7 +867,7 @@ const UserInterface = (function () {
             if (nameInput.checkValidity() && !projectNames.includes(nameInput.value)) {
                 e.preventDefault();
                 const oldName = projectItem.name;
-                projectItem.name = nameInput.value;
+                projectItem.changeName(nameInput.value);
 
                 projectNode.setAttribute('data-name', projectItem.name);
                 projectNode.querySelector('div.name').textContent = projectItem.name;
@@ -977,14 +993,12 @@ const UserInterface = (function () {
         buildNewToDoDialog,
         buildHeader,
         buildSidebar,
-        buildProjectDiv,
-        buildNewToDoButton,
         buildMain,
         createToDo,
         createProject,
         renderAll,
         renderProjectItems,
-        editToDo
+        editToDo,
     }
 
 })();
@@ -1001,5 +1015,44 @@ const DOMBuilder = (function () {
         UserInterface.buildMain();
     }
 
-    buildDefaultPage();
+    return {
+        buildDefaultPage,
+    }
 })()
+
+const StorageController = (function() {
+    const _reduceChecklist = function (toDo) {
+        const checkList = [];
+        toDo.checklist.forEach((item) => {
+            checkList.push(JSON.stringify(item));
+        })
+        return JSON.stringify(checkList);
+    }
+
+    const _reduceTodo = function (toDo) {
+        return {
+            title: toDo.title,
+            description: toDo.description,
+            dueDate: formatISO(toDo.dueDate),
+            checkList: _reduceChecklist(toDo),
+            priority: toDo.priority,
+            project: toDo.project === null ? "" : toDo.project.name,
+            completed: toDo.completed,
+        }
+    }
+
+    const updateStorage = function () {
+        const JSONtoDos = JSON.stringify(List.getToDos().map((item) => _reduceTodo(item)));
+        localStorage.setItem('toDos', JSONtoDos);
+
+        const JSONprojects = JSON.stringify(List.getProjects().map((item) => item.name));
+        localStorage.setItem('projects', JSONprojects);
+    }
+
+    return {
+        updateStorage,
+    }
+})();
+
+DOMBuilder.buildDefaultPage();
+StorageController.populateFromStorage();

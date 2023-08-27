@@ -128,7 +128,7 @@ const List = (function () {
                 deleteTodo(item);
             }
         })
-        projectIndex = projects.findIndex(project => project === proj);
+        const projectIndex = projects.findIndex(project => project === proj);
         projects.splice(projectIndex, 1);
     }
 
@@ -148,7 +148,6 @@ const List = (function () {
 })();
 
 const UserInterface = (function () {
-
     const _populateForm = function (purpose) {
         const form = document.createElement('form');
 
@@ -234,307 +233,343 @@ const UserInterface = (function () {
         
         return form;
     }
+    const buildNewToDoDialog = function () {
+        const main = document.querySelector('main');
 
-    const createDialog = document.createElement('dialog');
-    createDialog.classList.add('create');
-    createDialog.appendChild(_populateForm('create'));
+        const dialog = document.createElement('dialog');
+        dialog.classList.add('create');
+        const form = _populateForm('create');
+        dialog.appendChild(form);
 
-    const createClose = document.createElement('div');
-    createClose.classList.add('close');
-    const createConfirmBtn = document.createElement('button');
-    createConfirmBtn.textContent = 'confirm';
-    const createCancelBtn = document.createElement('button');
-    createCancelBtn.textContent = 'cancel';
-    createClose.appendChild(createConfirmBtn);
-    createClose.appendChild(createCancelBtn);
+        const closeDiv = document.createElement('div');
+        closeDiv.classList.add('close');
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'confirm';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'cancel';
+        closeDiv.appendChild(confirmBtn);
+        closeDiv.appendChild(cancelBtn);
 
-    const createForm = createDialog.querySelector('form');
-    createForm.appendChild(createClose);
+        form.appendChild(closeDiv);
 
-    createConfirmBtn.addEventListener('click', (e) => {
-        const inputs = createDialog.querySelectorAll('input');
-        let allValid = true;
-        Array.from(inputs).forEach((input) => {
-            if (!input.checkValidity()) {
-                allValid = false;
+        confirmBtn.addEventListener('click', (e) => {
+            const inputs = dialog.querySelectorAll('input');
+            let allValid = true;
+            Array.from(inputs).forEach((input) => {
+                if (!input.checkValidity()) {
+                    allValid = false;
+                }
+            });
+            if (allValid) {
+                e.preventDefault();
+                const title = dialog.querySelector('#create-title').value;
+                const description = dialog.querySelector('#create-description').value;
+                const dueDate = dialog.querySelector('#create-due-date').valueAsDate;
+                let priority;
+                const priorities = dialog.querySelectorAll('input[type="radio"]');
+                Array.from(priorities).forEach((item) => {
+                    if (item.checked) {
+                        priority = item.value;
+                    }
+                });
+
+                if (main.hasAttribute('data-project')) {
+                    const project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+                    const newToDo = List.createToDo(title, description, dueDate, priority, project);
+                    const toDoNode = createToDo(newToDo)
+                    toDoNode.setAttribute('data-index', List.getProjectItems(project).length - 1);
+                    main.appendChild(toDoNode);
+                } else {
+                    const newToDo = List.createToDo(title, description, dueDate, priority);
+                    const toDoNode = createToDo(newToDo)
+                    toDoNode.setAttribute('data-index', List.getToDos().length - 1);
+                    main.appendChild(toDoNode);
+                }
+
+                form.reset();
+                dialog.close();
+
+                new Masonry( main, {
+                    itemSelector: '.to-do',
+                    columnWidth: 300,
+                    horizontalOrder: true,
+                });
             }
         });
-        if (allValid) {
+
+        cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const title = createDialog.querySelector('#create-title').value;
-            const description = createDialog.querySelector('#create-description').value;
-            const dueDate = createDialog.querySelector('#create-due-date').valueAsDate;
-            let priority;
-            const priorities = createDialog.querySelectorAll('input[type="radio"]');
-            Array.from(priorities).forEach((item) => {
-                if (item.checked) {
-                    priority = item.value;
-                }
-            })
-
-            createToDo(title, description, dueDate, priority);
-            createForm.reset();
-            createDialog.close();
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 300,
-                horizontalOrder: true,
-            });
-        }
-    })
-
-    createCancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const form = createDialog.querySelector('form');
-        form.reset();
-        createDialog.close();
-    })
-
-    const editDialog = document.createElement('dialog');
-    editDialog.classList.add('edit');
-    editDialog.appendChild(_populateForm('edit'));
-
-    const editProject = document.createElement('div');
-    editProject.classList.add('input');
-    const editProjectLabel = document.createElement('label');
-    editProjectLabel.setAttribute('for', 'edit-project');
-    editProjectLabel.textContent = 'project';
-    const editProjectSelect = document.createElement('select');
-    editProjectSelect.id = 'edit-project';
-    editProjectSelect.setAttribute('name', 'edit-project');
-    editProject.appendChild(editProjectLabel);
-    editProject.appendChild(editProjectSelect);
-
-    const editClose = document.createElement('div');
-    createClose.classList.add('close');
-    const editConfirmBtn = document.createElement('button');
-    editConfirmBtn.textContent = 'confirm';
-    const editCancelBtn = document.createElement('button');
-    editCancelBtn.textContent = 'cancel';
-    editClose.appendChild(editConfirmBtn);
-    editClose.appendChild(editCancelBtn);
-
-    const editForm = editDialog.querySelector('form');
-    editForm.appendChild(editProject);
-    editForm.appendChild(editClose);
-
-    editConfirmBtn.addEventListener('click', (e) => {
-        const inputs = editDialog.querySelectorAll('input');
-        let allValid = true;
-        Array.from(inputs).forEach((input) => {
-            if (!input.checkValidity()) {
-                allValid = false;
-            }
-        });
-        if (allValid) {
-            e.preventDefault();
-
-            let toDo;
-            if (main.hasAttribute('data-project')) {
-                let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
-                toDo = List.getProjectItems(project)[editDialog.getAttribute('data-index')];
-            } else {
-                toDo = List.getToDos()[editDialog.getAttribute('data-index')];
-            }
-
-            const title = editDialog.querySelector('#edit-title').value;
-            const description = editDialog.querySelector('#edit-description').value;
-            const dueDate = editDialog.querySelector('#edit-due-date').valueAsDate;
-            let priority;
-            const priorities = editDialog.querySelectorAll('input[type="radio"]');
-            Array.from(priorities).forEach((item) => {
-                if (item.checked) {
-                    priority = item.value;
-                }
-            });
-            
-            let projectName
-            const projects = editDialog.querySelectorAll('option');
-            Array.from(projects).forEach((item) => {
-                if (item.selected) {
-                    projectName = item.value;
-                }
-            });
-            const project = projectName === 'none' ? null : List.getProjects().find((proj) => proj.name === projectName);
-
-            editToDo(toDo, title, description, dueDate, priority, project);
-            editDialog.removeAttribute('data-index');
-            editDialog.close();
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 300,
-                horizontalOrder: true,
-            });
-        }
-    })
-
-    editCancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        editDialog.removeAttribute('data-index');
-        const form = editDialog.querySelector('form');
-        form.reset();
-        editDialog.close();
-    })
-
-    const header = document.createElement('header');
-    const aside = document.createElement('aside');
-    const main = document.createElement('main');
-
-    const heading = document.createElement('h1');
-    heading.textContent = 'to-do list!'
-    header.appendChild(heading);
-
-    const home = document.createElement('h2');
-    home.textContent = 'home';
-
-    home.addEventListener('click',() => {
-        main.removeAttribute('data-project');
-        renderAll();
-    })
-
-    const today = document.createElement('h2');
-    today.textContent = 'today'; 
-
-    today.addEventListener('click', () => {
-        main.removeAttribute('data-project');
-        main.textContent = '';
-
-        List.getToDos().forEach((item) => {
-            if (isToday(item.dueDate)) {
-                const toDoItem = renderToDo(item);
-                const deleteBtn = toDoItem.querySelector('button.delete');
-                const editBtn = toDoItem.querySelector('button.edit');
-                toDoItem.removeChild(deleteBtn);
-                toDoItem.removeChild(editBtn);
-                main.appendChild(toDoItem);
-            }
-        })
-
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
+            form.reset();
+            dialog.close();
         });
 
-    })
-
-    const week = document.createElement('h2');
-    week.textContent = 'this week';
-
-    week.addEventListener('click', () => {
-        main.removeAttribute('data-project');
-        main.textContent = '';
-
-        List.getToDos().forEach((item) => {
-            if (isThisWeek(item.dueDate)) {
-                const toDoItem = renderToDo(item);
-                const deleteBtn = toDoItem.querySelector('button.delete');
-                const editBtn = toDoItem.querySelector('button.edit');
-                toDoItem.removeChild(deleteBtn);
-                toDoItem.removeChild(editBtn);
-                main.appendChild(toDoItem);
-            }
-        })
-
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
-        });
-    })
-
-
-    const projects = document.createElement('div');
-    const projectsHeader = document.createElement('h2');
-    projectsHeader.textContent = 'projects';
-    const createProjectBtn = document.createElement('button');
-    createProjectBtn.textContent = 'create new project';
-    createProjectBtn.classList.add('create-project');
-
-    projects.appendChild(projectsHeader);
-    projects.appendChild(createProjectBtn);
-
-    const createProjectPopUp = document.createElement('div');
-    const createProjectForm = document.createElement('form');
-    const newProjectName = document.createElement('div');
-    const projectNameLabel = document.createElement('label');
-    projectNameLabel.setAttribute('for', 'project-name');
-    projectNameLabel.textContent = 'name';
-    const projectNameInput = document.createElement('input')
-    projectNameInput.id = 'project-name';
-    projectNameInput.setAttribute('required', '')
-    projectNameInput.setAttribute('type', 'text')
-    const confirmProjectBtn = document.createElement('button');
-    confirmProjectBtn.textContent = 'confirm';
-    confirmProjectBtn.setAttribute('type', 'submit');
-    const cancelProjectBtn = document.createElement('button');
-    cancelProjectBtn.textContent = 'cancel';
-    newProjectName.appendChild(projectNameLabel);
-    newProjectName.appendChild(projectNameInput);
-    createProjectForm.appendChild(newProjectName);
-    createProjectForm.appendChild(confirmProjectBtn);
-    createProjectForm.appendChild(cancelProjectBtn);
-    createProjectPopUp.appendChild(createProjectForm);
-    
-    createProjectBtn.addEventListener('click', () => {
-        createProjectBtn.replaceWith(createProjectPopUp);
-    })
-
-    const isUnique = function (projName) {
-        let unique = true;
-        List.getProjects().forEach((item) => {
-            if (item.name === projName) {
-                unique = false;
-            }
-        })
-        return unique;
+        document.body.appendChild(dialog);
     }
 
-    confirmProjectBtn.addEventListener('click', (e) => {
-        if (!isUnique(projectNameInput.value)) {
-            projectNameInput.setCustomValidity('project name must be unique');
-        }
-        if (projectNameInput.checkValidity() && isUnique(projectNameInput.value)) {
+    const buildEditToDoDialog = function () {
+        const main = document.querySelector('main');
+        const dialog = document.createElement('dialog');
+        dialog.classList.add('edit');
+        const form = _populateForm('edit');
+        dialog.appendChild(form);
+
+        const projectInput = document.createElement('div');
+        projectInput.classList.add('input');
+        const projectLabel = document.createElement('label');
+        projectLabel.setAttribute('for', 'edit-project');
+        projectLabel.textContent = 'project';
+        const projectSelect = document.createElement('select');
+        projectSelect.id = 'edit-project';
+        projectSelect.setAttribute('name', 'edit-project');
+        projectInput.appendChild(projectLabel);
+        projectInput.appendChild(projectSelect);
+
+        const closeDiv = document.createElement('div');
+        closeDiv.classList.add('close');
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'confirm';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'cancel';
+        closeDiv.appendChild(confirmBtn);
+        closeDiv.appendChild(cancelBtn);
+
+        form.appendChild(projectInput);
+        form.appendChild(closeDiv);
+
+        confirmBtn.addEventListener('click', (e) => {
+            const inputs = dialog.querySelectorAll('input');
+            let allValid = true;
+            Array.from(inputs).forEach((input) => {
+                if (!input.checkValidity()) {
+                    allValid = false;
+                }
+            });
+            if (allValid) {
+                e.preventDefault();
+
+                const main = document.querySelector('main');
+
+                let toDo;
+                if (main.hasAttribute('data-project')) {
+                    let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
+                    toDo = List.getProjectItems(project)[dialog.getAttribute('data-index')];
+                } else {
+                    toDo = List.getToDos()[dialog.getAttribute('data-index')];
+                }
+
+                const title = dialog.querySelector('#edit-title').value;
+                const description = dialog.querySelector('#edit-description').value;
+                const dueDate = dialog.querySelector('#edit-due-date').valueAsDate;
+                let priority;
+                const priorities = dialog.querySelectorAll('input[type="radio"]');
+                Array.from(priorities).forEach((item) => {
+                    if (item.checked) {
+                        priority = item.value;
+                    }
+                });
+                
+                let projectName
+                const projects = dialog.querySelectorAll('option');
+                Array.from(projects).forEach((item) => {
+                    if (item.selected) {
+                        projectName = item.value;
+                    }
+                });
+                const project = projectName === 'none' ? null : List.getProjects().find((proj) => proj.name === projectName);
+
+                editToDo(toDo, title, description, dueDate, priority, project);
+                dialog.removeAttribute('data-index');
+                dialog.close();
+                new Masonry( main, {
+                    itemSelector: '.to-do',
+                    columnWidth: 300,
+                    horizontalOrder: true,
+                });
+            }
+        });
+
+        cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            createProject(projectNameInput.value);
-            createProjectForm.reset();
-            createProjectPopUp.replaceWith(createProjectBtn);
-        }
-    });
+            dialog.removeAttribute('data-index');
+            form.reset();
+            dialog.close();
+        });
 
-    cancelProjectBtn.addEventListener('click', () => {
-        createProjectForm.reset();
-        createProjectPopUp.replaceWith(createProjectBtn);
-    })
+        document.body.appendChild(dialog);
+    }
 
-    const createBtn = document.createElement('button');
-    createBtn.textContent = 'create to-do';
+    const buildHeader = function () {
+        const header = document.querySelector('header');
 
-    createBtn.addEventListener('click', () => {
-        createDialog.showModal();
-    })
+        const heading = document.createElement('h1');
+        heading.textContent = 'to-do list!'
+        header.appendChild(heading);
 
-    aside.appendChild(home);
-    aside.appendChild(today);
-    aside.appendChild(week);
-    aside.appendChild(projects);
-    aside.appendChild(createBtn);
+    }
 
-    document.body.appendChild(createDialog);
-    document.body.appendChild(editDialog);
-    document.body.appendChild(header);
-    document.body.appendChild(aside);
-    document.body.appendChild(main);
+    const buildSidebar = function () {
+        const main = document.querySelector('main');
 
-    const resetDataIndex = function (array) {
+        const aside = document.querySelector('aside');
+    
+        const home = document.createElement('h2');
+        home.textContent = 'home';
+
+        buildMain();
+
+        home.addEventListener('click',() => {
+            main.removeAttribute('data-project');
+            renderAll();
+        });
+
+        const today = document.createElement('h2');
+        today.textContent = 'today'; 
+
+        today.addEventListener('click', () => {
+            main.removeAttribute('data-project');
+            main.textContent = '';
+
+            List.getToDos().forEach((item) => {
+                if (isToday(item.dueDate)) {
+                    const toDoItem = createToDo(item);
+                    const deleteBtn = toDoItem.querySelector('button.delete');
+                    const editBtn = toDoItem.querySelector('button.edit');
+                    toDoItem.removeChild(deleteBtn);
+                    toDoItem.removeChild(editBtn);
+                    main.appendChild(toDoItem);
+                }
+            });
+
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 300,
+                horizontalOrder: true,
+            });
+
+        })
+
+        const week = document.createElement('h2');
+        week.textContent = 'this week';
+
+        week.addEventListener('click', () => {
+            main.removeAttribute('data-project');
+            main.textContent = '';
+
+            List.getToDos().forEach((item) => {
+                if (isThisWeek(item.dueDate)) {
+                    const toDoItem = createToDo(item);
+                    const deleteBtn = toDoItem.querySelector('button.delete');
+                    const editBtn = toDoItem.querySelector('button.edit');
+                    toDoItem.removeChild(deleteBtn);
+                    toDoItem.removeChild(editBtn);
+                    main.appendChild(toDoItem);
+                };
+            });
+
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 300,
+                horizontalOrder: true,
+            });
+        });
+
+        const projects = buildProjectDiv();
+        const createBtn = buildNewToDoButton();
+
+        aside.appendChild(home);
+        aside.appendChild(today);
+        aside.appendChild(week);
+        aside.appendChild(projects);
+        aside.appendChild(createBtn);
+    }
+
+    const buildProjectDiv = function () {
+        const projectsDiv = document.createElement('div');
+        projectsDiv.classList.add('projects')
+        const header = document.createElement('h2');
+        header.textContent = 'projects';
+        const createBtn = document.createElement('button');
+        createBtn.textContent = 'new project';
+        createBtn.classList.add('create-project');
+
+        projectsDiv.appendChild(header);
+        projectsDiv.appendChild(createBtn);
+
+        const createPopUp = document.createElement('div');
+        createPopUp.classList.add('create-pop-up')
+        const createForm = document.createElement('form');
+        const projectInput = document.createElement('input')
+        projectInput.id = 'project-name';
+        projectInput.setAttribute('required', '')
+        projectInput.setAttribute('type', 'text')
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'confirm';
+        confirmBtn.setAttribute('type', 'submit');
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'cancel';
+
+        createForm.appendChild(projectInput);
+        createForm.appendChild(confirmBtn);
+        createForm.appendChild(cancelBtn);
+
+        createPopUp.appendChild(createForm);
+        
+        createBtn.addEventListener('click', () => {
+            createBtn.replaceWith(createPopUp);
+        })
+
+        confirmBtn.addEventListener('click', (e) => {
+            const projectNames = List.getProjects().map((item) => item.name);
+            console.log(projectNames);
+            if (projectNames.includes(projectInput.value)) {
+                projectInput.setCustomValidity('project name must be unique');
+            };
+            if (projectInput.checkValidity() && !projectNames.includes(projectInput.value)) {
+                e.preventDefault();
+                if (document.querySelector('.create-project')) {
+                    projectsDiv.insertBefore(createProject(projectInput.value), document.querySelector('.create-project'));
+                } else {
+                    projectsDiv.insertBefore(createProject(projectInput.value), document.querySelector('.create-pop-up'));
+                }
+                createForm.reset();
+                createPopUp.replaceWith(createBtn);
+            };
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            createForm.reset();
+            createPopUp.replaceWith(createBtn);
+        });
+
+        return projectsDiv;
+    }
+
+    const buildNewToDoButton = function () {
+        const createBtn = document.createElement('button');
+        createBtn.textContent = 'create to-do';
+
+        createBtn.addEventListener('click', () => {
+            const createDialog = document.querySelector('dialog.create');
+            createDialog.showModal();
+        });
+
+        return createBtn;
+    }
+
+    const buildMain = function () {
+        const main = document.querySelector('main');
+
+    }
+
+    const _resetAttributes = function (array, attr) {
         let index = 0;
         array.forEach((item) => {
-            item.setAttribute('data-index', index);
+            item.setAttribute(attr, index);
             index++
         })
     }
 
-    const renderCheckListItem = function (checkListItem, toDo) {
+    const createCheckListItem = function (checkListItem, toDo) {
         const index = toDo.checklist.indexOf(checkListItem);
         const check = document.createElement('div');
         check.setAttribute('data-order', index);
@@ -566,11 +601,7 @@ const UserInterface = (function () {
             toDo.deleteChecklistItem(checkListItem);
             const container = check.parentElement;
             check.remove();
-            let index = 0;
-            Array.from(container.querySelectorAll('.check-item')).forEach((node) => {
-                node.setAttribute('data-order', index);
-                index++;
-            });
+            _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
         });
 
         editBtn.addEventListener('click', () => {
@@ -601,17 +632,18 @@ const UserInterface = (function () {
         return check;
     }
 
-    const renderChecklist = function (toDo) {
+    const createChecklist = function (toDo) {
         const container = document.createElement('div');
         container.classList.add('checklist');
         toDo.checklist.forEach((item) => {
-            container.appendChild(renderCheckListItem(item, toDo));
+            container.appendChild(createCheckListItem(item, toDo));
         })
 
         return container;
     }
 
-    const renderToDo = function (toDo) {
+    const createToDo = function (toDo) {
+        const main = document.querySelector('main');
         const container = document.createElement('div');
 
         const title = document.createElement('h4');
@@ -627,9 +659,10 @@ const UserInterface = (function () {
         dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
         container.setAttribute('data-priority', toDo.priority);
         dueDate.classList.add('due-date');
-        const checklist = renderChecklist(toDo);
+        const checklist = createChecklist(toDo);
 
         const addChecklistItemBtn = document.createElement('button');
+        addChecklistItemBtn.classList.add('add-checklist');
         addChecklistItemBtn.textContent = '+';
 
         const addPopUp = document.createElement('div');
@@ -665,7 +698,7 @@ const UserInterface = (function () {
             if (addInput.checkValidity()) {
                 e.preventDefault();
                 const checkListItem = toDo.addChecklistItem(addInput.value);
-                checklist.insertBefore(renderCheckListItem(checkListItem, toDo), addPopUp);
+                checklist.insertBefore(createCheckListItem(checkListItem, toDo), addPopUp);
                 addPopUp.replaceWith(addChecklistItemBtn);
 
                 addForm.reset();
@@ -698,6 +731,7 @@ const UserInterface = (function () {
         })
 
         editBtn.addEventListener('click', () => {
+            const editDialog = document.querySelector('dialog.edit');
             editDialog.showModal();
             const index = editBtn.parentElement.getAttribute('data-index');
             editDialog.setAttribute('data-index', index);
@@ -761,55 +795,9 @@ const UserInterface = (function () {
         return container;
     }
 
-    const renderAll = function () {
-        main.textContent = '';
-        List.getToDos().forEach((item) => {
-            const toDo = renderToDo(item);
-            main.appendChild(toDo);
-        })
-        const toDoItems = main.querySelectorAll('div.to-do');
-        resetDataIndex(Array.from(toDoItems));
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
-        });
-    }
-
-    const renderProject = function (project) {
-        main.textContent = '';
-        List.getProjectItems(project).forEach((item) => {
-            const toDo = renderToDo(item);
-            main.appendChild(toDo);
-        })
-        const toDoItems = main.querySelectorAll('div.to-do');
-        resetDataIndex(Array.from(toDoItems));
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
-        });
-    }
-
-    const createToDo = function (title, description, dueDate, priority) {
-        let newToDo;
-        if (main.hasAttribute('data-project')) {
-            const project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
-            newToDo = List.createToDo(title, description, dueDate, priority, project);
-        } else {
-            newToDo = List.createToDo(title, description, dueDate, priority);
-        }
-        main.appendChild(renderToDo(newToDo));
-        const toDoItems = main.querySelectorAll('div.to-do');
-        resetDataIndex(Array.from(toDoItems));
-        new Masonry( main, {
-            itemSelector: '.to-do',
-            columnWidth: 300,
-            horizontalOrder: true,
-        });
-    }
-
     const createProject = function (name) {
+        const main = document.querySelector('main');
+
         const newProject = List.createProject(name);
         const projectNode = document.createElement('div');
         const deleteBtn = document.createElement('button');
@@ -826,11 +814,6 @@ const UserInterface = (function () {
         projectNode.appendChild(projectText);
         projectNode.appendChild(deleteBtn);
         projectNode.appendChild(editBtn);
-        if (document.contains(createProjectBtn)) {
-            projects.insertBefore(projectNode, createProjectBtn);
-        } else {
-            projects.insertBefore(projectNode, createProjectPopUp);
-        }
         
         const nameInput = document.createElement('input');
         nameInput.setAttribute('required', '');
@@ -856,8 +839,8 @@ const UserInterface = (function () {
         })
 
         confirmBtn.addEventListener('click', (e) => {
-            const proj = List.getProjects().find((item) => item.name === editPopUp.getAttribute('data-name'));
-            const projIndex = List.getProjects().indexOf(proj);
+            const projectItem = List.getProjects().find((item) => item.name === editPopUp.getAttribute('data-name'));
+            const projIndex = List.getProjects().indexOf(projectItem);
             const modifiedProjectList = List.getProjects();
             modifiedProjectList.splice(projIndex, 1)
             const projectNames = modifiedProjectList.map((item) => item.name);
@@ -867,24 +850,24 @@ const UserInterface = (function () {
             }
             if (nameInput.checkValidity() && !projectNames.includes(nameInput.value)) {
                 e.preventDefault();
-                const oldName = proj.name;
-                proj.name = nameInput.value;
+                const oldName = projectItem.name;
+                projectItem.name = nameInput.value;
 
-                projectNode.setAttribute('data-name', proj.name);
-                projectNode.querySelector('div.name').textContent = proj.name;
+                projectNode.setAttribute('data-name', projectItem.name);
+                projectNode.querySelector('div.name').textContent = projectItem.name;
 
                 if (main.getAttribute('data-project') === oldName) {
-                    main.setAttribute('data-project', proj.name);
+                    main.setAttribute('data-project', projectItem.name);
                     const projectItems = main.querySelectorAll('.to-do');
                     Array.from(projectItems).forEach((item) => {
-                        item.querySelector('.project').textContent = proj.name;
+                        item.querySelector('.project').textContent = projectItem.name;
                     })
                 } else if (!main.hasAttribute('data-project')) {
                     let index = 0;
                     Array.from(document.querySelectorAll('.to-do')).forEach((item) => {
                         const project = List.getToDos()[index].project
-                        if (project !== null && project.name === proj.name) {
-                            item.querySelector('.project').textContent = proj.name;
+                        if (project !== null && project.name === projectItem.name) {
+                            item.querySelector('.project').textContent = projectItem.name;
                         }
                         index++;
                     })
@@ -902,7 +885,7 @@ const UserInterface = (function () {
 
         projectText.addEventListener('click', () => {
             main.setAttribute('data-project', newProject.name);
-            renderProject(newProject);
+            renderProjectItems(newProject);
         })
 
         deleteBtn.textContent = 'delete';
@@ -917,10 +900,11 @@ const UserInterface = (function () {
                 index++;
             })
 
-            List.deleteTodo(newProject);
-            resetDataIndex(Array.from(main.querySelectorAll('.to-do')));
+            _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
             const projectItem = deleteBtn.parentElement;
-            projects.removeChild(projectItem);
+            projectItem.remove();
+
+            List.deleteProject(newProject);
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -929,16 +913,49 @@ const UserInterface = (function () {
             });
         })
 
-        return newProject;
+        return projectNode;
     }
 
+    const renderAll = function () {
+        const main = document.querySelector('main');
+        main.textContent = '';
+        List.getToDos().forEach((item) => {
+            main.appendChild(createToDo(item));
+        })
+        const toDoItems = main.querySelectorAll('div.to-do');
+        _resetAttributes(Array.from(toDoItems), 'data-index');
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+    }
+
+    const renderProjectItems = function (project) {
+        const main = document.querySelector('main');
+        main.textContent = '';
+        List.getProjectItems(project).forEach((item) => {
+            const toDo = createToDo(item);
+            main.appendChild(toDo);
+        })
+        const toDoItems = main.querySelectorAll('div.to-do');
+        _resetAttributes(Array.from(toDoItems), 'data-index');
+        new Masonry( main, {
+            itemSelector: '.to-do',
+            columnWidth: 300,
+            horizontalOrder: true,
+        });
+    }
+    
     const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {
+        const main = document.querySelector('main');
+        
         const oldProject = toDo.project;
         toDo.edit(newTitle, newDescription, newDueDate, newPriority, newProject);
         let toDoItem;
         if (main.hasAttribute('data-project')) {
             if (oldProject !== newProject) {
-                renderProject(oldProject);
+                renderProjectItems(oldProject);
                 return;
             }
             let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
@@ -955,33 +972,34 @@ const UserInterface = (function () {
         toDoItem.setAttribute('data-priority', toDo.priority);
     }
 
-    const h = createProject('home');
-    const a = List.createToDo('clean', '', new Date(), 'high');
-    const b = List.createToDo('cook', '', new Date(), 'medium');
-    const c = List.createToDo('do homework', 'i need to do my homework to get good grades', new Date(), 'low');
-    const d = List.createToDo('feed cat', 'allergic to onions', new Date(), 'medium')
-
-    createProject('school');
-
-    h.add(a);
-    h.add(d);
-    a.addChecklistItem('living room');
-    a.addChecklistItem('kitchen');
-
-    c.addChecklistItem('math');
-    c.addChecklistItem('english');
-    c.addChecklistItem('science')
-    
-    renderProject(h);
-    renderAll();
-
-    createToDo('title', 'description', new Date(), 'high');
-    createToDo('title', 'description', new Date(), 'high');
-
-
     return {
+        buildEditToDoDialog,
+        buildNewToDoDialog,
+        buildHeader,
+        buildSidebar,
+        buildProjectDiv,
+        buildNewToDoButton,
+        buildMain,
         createToDo,
         createProject,
+        renderAll,
+        renderProjectItems,
+        editToDo
     }
 
 })();
+
+const DOMBuilder = (function () {
+    const buildDefaultPage = function() {
+        document.body.appendChild(document.createElement('header'));
+        document.body.appendChild(document.createElement('aside'));
+        document.body.appendChild(document.createElement('main'));
+        UserInterface.buildNewToDoDialog();
+        UserInterface.buildEditToDoDialog();
+        UserInterface.buildHeader();
+        UserInterface.buildSidebar();
+        UserInterface.buildMain();
+    }
+
+    buildDefaultPage();
+})()

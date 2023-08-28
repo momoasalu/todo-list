@@ -337,6 +337,23 @@ const UserInterface = (function () {
                     const toDoNode = createToDo(newToDo)
                     toDoNode.setAttribute('data-index', List.getProjectItems(project).length - 1);
                     main.appendChild(toDoNode);
+                } else if (main.hasAttribute('data-date')) {
+                    const newToDo = List.createToDo(title, description, dueDate, priority);
+                    if (document.querySelector('.title').textContent === 'this week') {
+                        if (isThisWeek(newToDo.dueDate)) {
+                            const toDoNode = createToDo(newToDo);
+                            toDoNode.removeChild(toDoNode.querySelector('button.delete'));
+                            toDoNode.removeChild(toDoNode.querySelector('button.edit'));
+                            main.appendChild(toDoNode);
+                        }
+                    } else if (document.querySelector('.title').textContent === 'today') {
+                        if (isToday(newToDo.dueDate)) {
+                            const toDoNode = createToDo(newToDo);
+                            toDoNode.removeChild(toDoNode.querySelector('button.delete'));
+                            toDoNode.removeChild(toDoNode.querySelector('button.edit'));
+                            main.appendChild(toDoNode);
+                        }
+                    }
                 } else {
                     const newToDo = List.createToDo(title, description, dueDate, priority);
                     const toDoNode = createToDo(newToDo)
@@ -486,6 +503,7 @@ const UserInterface = (function () {
         today.addEventListener('click', () => {
             _retitleMain('today');
             main.removeAttribute('data-project');
+            main.setAttribute('data-date', 'today');
             main.textContent = '';
 
             List.getToDos().forEach((item) => {
@@ -518,6 +536,7 @@ const UserInterface = (function () {
         week.addEventListener('click', () => {
             _retitleMain('this week');
             main.removeAttribute('data-project');
+            main.setAttribute('data-date', 'week');
             main.textContent = '';
 
             List.getToDos().forEach((item) => {

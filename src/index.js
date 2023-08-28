@@ -67,12 +67,12 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
                 this.project.remove(this);
             };
             newProject.add(this);
-            setProject(newProject);
+            this.setProject(newProject);
         } else if (newProject === null) {
             if (this.project !== null) {
                 this.project.remove(this);
             }; 
-            setProject(null);
+            this.setProject(null);
         }
         StorageController.updateStorage();
     }
@@ -191,6 +191,21 @@ const List = (function () {
 })();
 
 const UserInterface = (function () {
+    const _retitleMain = function (newTitle) {
+        const title = document.querySelector('.title');
+        title.textContent = newTitle;
+    }
+
+    const _renderEmptyMessage = function () {
+        const main = document.querySelector('#main');
+        if (main.childNodes.length === 0) {
+            const emptyMessage = document.createElement('p');
+            emptyMessage.classList.add('empty-message');
+            emptyMessage.textContent = 'no tasks here!'
+            main.appendChild(emptyMessage);
+        }
+    }
+
     const _populateForm = function (purpose) {
         const form = document.createElement('form');
 
@@ -277,7 +292,7 @@ const UserInterface = (function () {
         return form;
     }
     const buildNewToDoDialog = function () {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
 
         const dialog = document.createElement('dialog');
         dialog.classList.add('create');
@@ -329,6 +344,10 @@ const UserInterface = (function () {
                     main.appendChild(toDoNode);
                 }
 
+                if (main.querySelector('.empty-message')) {
+                    main.querySelector('.empty-message').remove();
+                }
+
                 form.reset();
                 dialog.close();
 
@@ -350,7 +369,7 @@ const UserInterface = (function () {
     }
 
     const buildEditToDoDialog = function () {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
         const dialog = document.createElement('dialog');
         dialog.classList.add('edit');
         const form = _populateForm('edit');
@@ -389,8 +408,6 @@ const UserInterface = (function () {
             });
             if (allValid) {
                 e.preventDefault();
-
-                const main = document.querySelector('main');
 
                 let toDo;
                 if (main.hasAttribute('data-project')) {
@@ -451,16 +468,14 @@ const UserInterface = (function () {
     }
 
     const buildSidebar = function () {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
 
         const aside = document.querySelector('aside');
     
         const home = document.createElement('h2');
         home.textContent = 'home';
 
-        buildMain();
-
-        home.addEventListener('click',() => {
+        home.addEventListener('click', () => {
             main.removeAttribute('data-project');
             renderAll();
         });
@@ -469,6 +484,7 @@ const UserInterface = (function () {
         today.textContent = 'today'; 
 
         today.addEventListener('click', () => {
+            _retitleMain('today');
             main.removeAttribute('data-project');
             main.textContent = '';
 
@@ -483,6 +499,11 @@ const UserInterface = (function () {
                 }
             });
 
+            if (!main.hasChildNodes()) {
+                _renderEmptyMessage();
+                return;
+            }
+
             new Masonry( main, {
                 itemSelector: '.to-do',
                 columnWidth: 300,
@@ -495,6 +516,7 @@ const UserInterface = (function () {
         week.textContent = 'this week';
 
         week.addEventListener('click', () => {
+            _retitleMain('this week');
             main.removeAttribute('data-project');
             main.textContent = '';
 
@@ -508,6 +530,11 @@ const UserInterface = (function () {
                     main.appendChild(toDoItem);
                 };
             });
+
+            if (!main.hasChildNodes()) {
+                _renderEmptyMessage();
+                return;
+            }
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -528,7 +555,7 @@ const UserInterface = (function () {
 
     const buildProjectDiv = function () {
         const projectsDiv = document.createElement('div');
-        projectsDiv.classList.add('projects')
+        projectsDiv.classList.add('projects');
         const header = document.createElement('h2');
         header.textContent = 'projects';
         const createBtn = document.createElement('button');
@@ -604,6 +631,15 @@ const UserInterface = (function () {
     const buildMain = function () {
         const main = document.querySelector('main');
 
+        const title = document.createElement('h1');
+        title.textContent = 'home';
+        title.classList.add('title');
+
+        const mainBox = document.createElement('div');
+        mainBox.id = 'main';
+
+        main.appendChild(title);
+        main.appendChild(mainBox);
     }
 
     const _resetAttributes = function (array, attr) {
@@ -711,7 +747,7 @@ const UserInterface = (function () {
     }
 
     const createToDo = function (toDo) {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
         const container = document.createElement('div');
 
         if (toDo.completed) {
@@ -817,8 +853,12 @@ const UserInterface = (function () {
             List.deleteTodo(toDo);
             const toDoItem = deleteBtn.parentElement
             main.removeChild(toDoItem);
+            if (!main.hasChildNodes()) {
+                _renderEmptyMessage();
+                return;
+            }
             const toDoItems = main.querySelectorAll('div.to-do');
-            resetDataIndex(Array.from(toDoItems));
+            _resetAttributes(Array.from(toDoItems), 'data-index');
             new Masonry( main, {
                 itemSelector: '.to-do',
                 columnWidth: 300,
@@ -893,7 +933,7 @@ const UserInterface = (function () {
     }
 
     const createProject = function (name) {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
 
         const newProject = List.createProject(name);
         const projectNode = document.createElement('div');
@@ -949,6 +989,7 @@ const UserInterface = (function () {
                 e.preventDefault();
                 const oldName = projectItem.name;
                 projectItem.changeName(nameInput.value);
+                _retitleMain(nameInput.value);
 
                 projectNode.setAttribute('data-name', projectItem.name);
                 projectNode.querySelector('div.name').textContent = projectItem.name;
@@ -981,8 +1022,12 @@ const UserInterface = (function () {
         })
 
         projectText.addEventListener('click', () => {
+            _retitleMain(newProject.name);
             main.setAttribute('data-project', newProject.name);
             renderProjectItems(newProject);
+            if (!main.hasChildNodes()) {
+                _renderEmptyMessage();
+            }
         })
 
         deleteBtn.textContent = 'delete';
@@ -995,13 +1040,19 @@ const UserInterface = (function () {
                     main.removeChild(item);
                 }
                 index++;
-            })
+            });
 
             _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
             const projectItem = deleteBtn.parentElement;
             projectItem.remove();
 
             List.deleteProject(newProject);
+
+            if (main.hasAttribute('data-project')) {
+                main.removeAttribute('data-project');
+                _retitleMain('home');
+                renderAll();
+            }
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -1014,11 +1065,16 @@ const UserInterface = (function () {
     }
 
     const renderAll = function () {
-        const main = document.querySelector('main');
+        _retitleMain('home');
+        const main = document.querySelector('#main');
         main.textContent = '';
         List.getToDos().forEach((item) => {
             main.appendChild(createToDo(item));
         })
+        if (!main.hasChildNodes()){
+            _renderEmptyMessage();
+            return;
+        }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
         new Masonry( main, {
@@ -1029,7 +1085,7 @@ const UserInterface = (function () {
     }
 
     const renderProjectItems = function (project) {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
         main.textContent = '';
         List.getProjectItems(project).forEach((item) => {
             const toDo = createToDo(item);
@@ -1045,7 +1101,7 @@ const UserInterface = (function () {
     }
     
     const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {
-        const main = document.querySelector('main');
+        const main = document.querySelector('#main');
         
         const oldProject = toDo.project;
         toDo.edit(newTitle, newDescription, newDueDate, newPriority, newProject);
@@ -1089,11 +1145,11 @@ const DOMBuilder = (function () {
         document.body.appendChild(document.createElement('header'));
         document.body.appendChild(document.createElement('aside'));
         document.body.appendChild(document.createElement('main'));
+        UserInterface.buildHeader();
+        UserInterface.buildMain();
+        UserInterface.buildSidebar();
         UserInterface.buildNewToDoDialog();
         UserInterface.buildEditToDoDialog();
-        UserInterface.buildHeader();
-        UserInterface.buildSidebar();
-        UserInterface.buildMain();
     }
 
     return {

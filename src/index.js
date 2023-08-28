@@ -1,23 +1,31 @@
-import { format, formatISO, isThisWeek, isToday, parseJSON, toDate } from "date-fns";
+import { format, formatISO, isThisWeek, isToday, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
-        this.checked = checked ? false : true;
+        this.checked = this.checked ? false : true;
         StorageController.updateStorage();
     }
 
     const markComplete = function () {
         this.checked = true;
+    }
+
+    const markIncomplete = function() {
+        this.checked = false;
+    }
+
+    const changeName = function (newName) {
+        this.name = newName;
         StorageController.updateStorage();
     }
 
-    return {name, checked, toggleComplete, markComplete}
+    return {name, checked, toggleComplete, markComplete, markIncomplete, changeName}
 }
 
 const ToDo = (title, description, dueDate, priority, project, completed, checklist) => {
-    const setProject = function (proj) {
-        this.project = proj
+    const setProject = function (newProject) {
+        this.project = newProject;
     }
 
     const addChecklistItem = function (name, checked=false) {
@@ -29,14 +37,23 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
 
     const deleteChecklistItem = function (checklistItem) {
         if (this.checklist.includes(checklistItem)) {
-            const index = this.checklist.findIndex((item) => item === checklistItem);
+            const index = this.checklist.indexOf(checklistItem);
             this.checklist.splice(index, 1);
             StorageController.updateStorage();
         }
     }
 
-    const toggleComplete = function () {
-        this.completed = completed ? false : true;
+    const toggleComplete = function (all = true) {
+        this.completed = this.completed ? false : true;
+        if (all) {
+            this.checklist.forEach((checkitem) => {
+                if (this.completed === false) {
+                    checkitem.markIncomplete();
+                } else {
+                    checkitem.markComplete();
+                }
+            })
+        }
         StorageController.updateStorage();
     }
 
@@ -50,12 +67,12 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
                 this.project.remove(this);
             };
             newProject.add(this);
-            this.project = newProject;
+            setProject(newProject);
         } else if (newProject === null) {
             if (this.project !== null) {
                 this.project.remove(this);
             }; 
-            this.project = null;
+            setProject(null);
         }
         StorageController.updateStorage();
     }
@@ -601,6 +618,18 @@ const UserInterface = (function () {
         const index = toDo.checklist.indexOf(checkListItem);
         const check = document.createElement('div');
         check.setAttribute('data-order', index);
+        if (checkListItem.checked) {
+            check.classList.add('checked');
+        } else {
+            check.classList.add('unchecked')
+        }
+
+        const checkBox = document.createElement('div');
+        checkBox.classList.add('checklist-checkbox');
+        checkBox.style.backgroundColor = 'green';
+        checkBox.style.width = '30px';
+        checkBox.style.height = '30px';
+
         const checkText = document.createElement('p');
         checkText.textContent = checkListItem.name;
         check.classList.add('check-item');
@@ -625,6 +654,17 @@ const UserInterface = (function () {
         editForm.appendChild(editCancelBtn);
         editPopUp.appendChild(editForm);
 
+        checkBox.addEventListener('click', () => {
+            checkListItem.toggleComplete();
+            if (toDo.completed) {
+                toDo.toggleComplete(false);
+                check.parentElement.parentElement.classList.add('unchecked');
+                check.parentElement.parentElement.classList.remove('checked');
+            }
+            check.classList.toggle('unchecked');
+            check.classList.toggle('checked');
+        })
+
         deleteBtn.addEventListener('click', () => {
             toDo.deleteChecklistItem(checkListItem);
             const container = check.parentElement;
@@ -639,8 +679,7 @@ const UserInterface = (function () {
 
         editConfirmBtn.addEventListener('click', (e) => {
             if (editInput.checkValidity()) {
-                const checkListObject = toDo.checklist[check.getAttribute('data-order')];
-                checkListObject.name = editInput.value;
+                checkListItem.changeName(editInput.value);
                 e.preventDefault();
                 checkText.textContent = editInput.value;
                 editPopUp.replaceWith(check);
@@ -653,6 +692,7 @@ const UserInterface = (function () {
             editPopUp.replaceWith(check);
         })
 
+        check.appendChild(checkBox);
         check.appendChild(checkText);
         check.appendChild(deleteBtn);
         check.appendChild(editBtn);
@@ -665,7 +705,7 @@ const UserInterface = (function () {
         container.classList.add('checklist');
         toDo.checklist.forEach((item) => {
             container.appendChild(createCheckListItem(item, toDo));
-        })
+        });
 
         return container;
     }
@@ -673,6 +713,18 @@ const UserInterface = (function () {
     const createToDo = function (toDo) {
         const main = document.querySelector('main');
         const container = document.createElement('div');
+
+        if (toDo.completed) {
+            container.classList.add('checked');
+        } else {
+            container.classList.add('unchecked');
+        }
+
+        const checkBox = document.createElement('div');
+        checkBox.classList.add('checkbox');
+        checkBox.style.backgroundColor = 'red';
+        checkBox.style.width = '30px';
+        checkBox.style.height = '30px';
 
         const title = document.createElement('h4');
         title.textContent = toDo.title;
@@ -745,6 +797,22 @@ const UserInterface = (function () {
             addPopUp.replaceWith(addChecklistItemBtn);
         })
 
+        checkBox.addEventListener('click', () => {
+            toDo.toggleComplete();
+            container.classList.toggle('checked');
+            container.classList.toggle('unchecked');
+
+            Array.from(container.querySelectorAll('.check-item')).forEach((item) => {
+                if (toDo.completed) {
+                    item.classList.remove('unchecked');
+                    item.classList.add('checked');
+                } else {
+                    item.classList.remove('checked');
+                    item.classList.add('unchecked');
+                }
+            })
+        }) 
+
         deleteBtn.addEventListener('click', () => {
             List.deleteTodo(toDo);
             const toDoItem = deleteBtn.parentElement
@@ -812,6 +880,7 @@ const UserInterface = (function () {
         });
 
         container.classList.add('to-do');
+        container.append(checkBox);
         container.append(title);
         container.append(project);
         container.append(description);
@@ -1085,6 +1154,7 @@ const StorageController = (function() {
 
     const populateFromStorage = function () {
         const JSONprojects = JSON.parse(localStorage.getItem('projects'));
+
         const projectsDiv = document.querySelector('div.projects')
         const createProjectBtn = document.querySelector('button.create-project');
 
@@ -1093,7 +1163,6 @@ const StorageController = (function() {
         });
 
         const JSONtoDos = JSON.parse(localStorage.getItem('toDos'));
-
         JSONtoDos.forEach(item => {_expandToDo(item)});
 
         UserInterface.renderAll();

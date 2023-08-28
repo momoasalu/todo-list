@@ -1,4 +1,4 @@
-import { format, formatISO, isThisWeek, isToday, parseJSON } from "date-fns";
+import { addDays, addWeeks, format, formatISO, isThisWeek, isToday, isWithinInterval, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
 import './style.css';
 
@@ -199,7 +199,7 @@ const UserInterface = (function () {
 
     const _renderEmptyMessage = function () {
         const main = document.querySelector('#main');
-        if (main.childNodes.length === 0) {
+        if (!main.hasChildNodes()) {
             const emptyMessage = document.createElement('p');
             emptyMessage.classList.add('empty-message');
             emptyMessage.textContent = 'no tasks here!'
@@ -340,14 +340,17 @@ const UserInterface = (function () {
                     main.appendChild(toDoNode);
                 } else if (main.hasAttribute('data-date')) {
                     const newToDo = List.createToDo(title, description, dueDate, priority);
-                    if (document.querySelector('.title').textContent === 'this week') {
-                        if (isThisWeek(newToDo.dueDate)) {
+                    if (main.getAttribute('data-date') === 'upcoming') {
+                        if (isWithinInterval(item.dueDate, {
+                            start: addDays(new Date().setHours(0, 0, 0, 0), 1),
+                            end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
+                        })) {
                             const toDoNode = createToDo(newToDo);
                             toDoNode.removeChild(toDoNode.querySelector('button.delete'));
                             toDoNode.removeChild(toDoNode.querySelector('button.edit'));
                             main.appendChild(toDoNode);
                         }
-                    } else if (document.querySelector('.title').textContent === 'today') {
+                    } else if (main.getAttribute('data-date') === 'today') {
                         if (isToday(newToDo.dueDate)) {
                             const toDoNode = createToDo(newToDo);
                             toDoNode.removeChild(toDoNode.querySelector('button.delete'));
@@ -532,17 +535,20 @@ const UserInterface = (function () {
 
         })
 
-        const week = document.createElement('h2');
-        week.textContent = 'this week';
+        const upcoming = document.createElement('h2');
+        upcoming.textContent = 'upcoming';
 
-        week.addEventListener('click', () => {
-            _retitleMain('this week');
+        upcoming.addEventListener('click', () => {
+            _retitleMain('upcoming');
             main.removeAttribute('data-project');
-            main.setAttribute('data-date', 'week');
+            main.setAttribute('data-date', 'upcoming');
             main.textContent = '';
 
             List.getToDos().forEach((item) => {
-                if (isThisWeek(item.dueDate)) {
+                if (isWithinInterval(item.dueDate, {
+                    start: addDays(new Date().setHours(0, 0, 0, 0), 1),
+                    end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
+                })) {
                     const toDoItem = createToDo(item);
                     const deleteBtn = toDoItem.querySelector('button.delete');
                     const editBtn = toDoItem.querySelector('button.edit');
@@ -569,7 +575,7 @@ const UserInterface = (function () {
 
         aside.appendChild(home);
         aside.appendChild(today);
-        aside.appendChild(week);
+        aside.appendChild(upcoming);
         aside.appendChild(projects);
         aside.appendChild(createBtn);
     }
@@ -1235,7 +1241,7 @@ const StorageController = (function() {
     }
 
     const populateFromStorage = function () {
-        if (localStorage.getItem('projets') && localStorage.getItem('toDos')) {
+        if (localStorage.getItem('projects') && localStorage.getItem('toDos')) {
             const JSONprojects = JSON.parse(localStorage.getItem('projects'));
 
             const projectsDiv = document.querySelector('div.projects')
@@ -1250,6 +1256,8 @@ const StorageController = (function() {
 
             UserInterface.renderAll();
         }
+
+        UserInterface.renderAll();
     }
 
     return {

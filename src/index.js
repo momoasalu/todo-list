@@ -1235,19 +1235,21 @@ const StorageController = (function() {
     }
 
     const populateFromStorage = function () {
-        const JSONprojects = JSON.parse(localStorage.getItem('projects'));
+        if (localStorage.getItem('projets') && localStorage.getItem('toDos')) {
+            const JSONprojects = JSON.parse(localStorage.getItem('projects'));
 
-        const projectsDiv = document.querySelector('div.projects')
-        const createProjectBtn = document.querySelector('button.create-project');
+            const projectsDiv = document.querySelector('div.projects')
+            const createProjectBtn = document.querySelector('button.create-project');
 
-        JSONprojects.forEach((item) => {
-            projectsDiv.insertBefore(UserInterface.createProject(item), createProjectBtn)
-        });
+            JSONprojects.forEach((item) => {
+                projectsDiv.insertBefore(UserInterface.createProject(item), createProjectBtn)
+            });
 
-        const JSONtoDos = JSON.parse(localStorage.getItem('toDos'));
-        JSONtoDos.forEach(item => {_expandToDo(item)});
+            const JSONtoDos = JSON.parse(localStorage.getItem('toDos'));
+            JSONtoDos.forEach(item => {_expandToDo(item)});
 
-        UserInterface.renderAll();
+            UserInterface.renderAll();
+        }
     }
 
     return {

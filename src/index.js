@@ -1,4 +1,4 @@
-import { addDays, addWeeks, format, formatISO, isThisWeek, isToday, isWithinInterval, parseJSON } from "date-fns";
+import { addDays, addWeeks, format, formatISO, isToday, isWithinInterval, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
 import './style.css';
 
@@ -374,8 +374,9 @@ const UserInterface = (function () {
 
                 new Masonry( main, {
                     itemSelector: '.to-do',
-                    columnWidth: 300,
+                    columnWidth: 250,
                     horizontalOrder: true,
+                    gutter: 20
                 });
             }
         });
@@ -463,8 +464,9 @@ const UserInterface = (function () {
                 dialog.close();
                 new Masonry( main, {
                     itemSelector: '.to-do',
-                    columnWidth: 300,
+                    columnWidth: 250,
                     horizontalOrder: true,
+                    gutter: 20,
                 });
             }
         });
@@ -529,8 +531,9 @@ const UserInterface = (function () {
 
             new Masonry( main, {
                 itemSelector: '.to-do',
-                columnWidth: 300,
+                columnWidth: 250,
                 horizontalOrder: true,
+                gutter: 20,
             });
 
         })
@@ -565,8 +568,9 @@ const UserInterface = (function () {
 
             new Masonry( main, {
                 itemSelector: '.to-do',
-                columnWidth: 300,
+                columnWidth: 250,
                 horizontalOrder: true,
+                gutter: 20,
             });
         });
 
@@ -679,6 +683,13 @@ const UserInterface = (function () {
     const createCheckListItem = function (checkListItem, toDo) {
         const index = toDo.checklist.indexOf(checkListItem);
         const check = document.createElement('div');
+
+        const buttons = document.createElement('div');
+        buttons.classList.add('buttons');
+
+        const popUpBtn = document.createElement('button');
+        const popUp = document.createElement('div');
+
         check.setAttribute('data-order', index);
         if (checkListItem.checked) {
             check.classList.add('checked');
@@ -688,9 +699,6 @@ const UserInterface = (function () {
 
         const checkBox = document.createElement('div');
         checkBox.classList.add('checklist-checkbox');
-        checkBox.style.backgroundColor = 'green';
-        checkBox.style.width = '30px';
-        checkBox.style.height = '30px';
 
         const checkText = document.createElement('p');
         checkText.textContent = checkListItem.name;
@@ -715,6 +723,28 @@ const UserInterface = (function () {
         editForm.appendChild(editConfirmBtn);
         editForm.appendChild(editCancelBtn);
         editPopUp.appendChild(editForm);
+
+        popUp.appendChild(deleteBtn);
+        popUp.appendChild(editBtn);
+
+        popUpBtn.textContent = 'pop!';
+        popUp.classList.add('pop-up');
+
+        popUpBtn.addEventListener('click', () => {
+            if (check.contains(popUp)) {
+                check.removeChild(popUp);
+            } else {
+                const container = check.parentElement;
+                const checkNodes = container.querySelectorAll('div.check-item');
+                Array.from(checkNodes).forEach((node) => {
+                    if (node.querySelector('div.pop-up')) {
+                        const popUp = node.querySelector('div.pop-up');
+                        node.removeChild(popUp);
+                    }
+                });
+                check.appendChild(popUp);
+            }
+        })
 
         checkBox.addEventListener('click', () => {
             checkListItem.toggleComplete();
@@ -745,6 +775,7 @@ const UserInterface = (function () {
                 e.preventDefault();
                 checkText.textContent = editInput.value;
                 editPopUp.replaceWith(check);
+                check.removeChild(popUp);
             }
         });
 
@@ -752,12 +783,11 @@ const UserInterface = (function () {
             e.preventDefault();
             editForm.reset();
             editPopUp.replaceWith(check);
-        })
+        });
 
         check.appendChild(checkBox);
         check.appendChild(checkText);
-        check.appendChild(deleteBtn);
-        check.appendChild(editBtn);
+        check.appendChild(popUpBtn);
 
         return check;
     }
@@ -784,13 +814,16 @@ const UserInterface = (function () {
 
         const checkBox = document.createElement('div');
         checkBox.classList.add('checkbox');
-        checkBox.style.backgroundColor = 'red';
-        checkBox.style.width = '30px';
-        checkBox.style.height = '30px';
 
         const title = document.createElement('h4');
         title.textContent = toDo.title;
         title.classList.add('title');
+
+        const titleBox = document.createElement('div');
+        titleBox.classList.add('title-box');
+        titleBox.appendChild(title);
+        titleBox.appendChild(checkBox);
+
         const project = document.createElement('h5');
         project.textContent = toDo.project === null ? '' : toDo.project.name;
         project.classList.add('project');
@@ -847,8 +880,9 @@ const UserInterface = (function () {
                 
                 new Masonry( main, {
                     itemSelector: '.to-do',
-                    columnWidth: 300,
+                    columnWidth: 250,
                     horizontalOrder: true,
+                    gutter: 20,
                 });
             }
         });
@@ -887,8 +921,9 @@ const UserInterface = (function () {
             _resetAttributes(Array.from(toDoItems), 'data-index');
             new Masonry( main, {
                 itemSelector: '.to-do',
-                columnWidth: 300,
+                columnWidth: 250,
                 horizontalOrder: true,
+                gutter: 20,
             });
         })
 
@@ -946,8 +981,7 @@ const UserInterface = (function () {
         });
 
         container.classList.add('to-do');
-        container.append(checkBox);
-        container.append(title);
+        container.append(titleBox);
         container.append(project);
         container.append(description);
         container.append(dueDate);
@@ -963,6 +997,8 @@ const UserInterface = (function () {
 
         const newProject = List.createProject(name);
         const projectNode = document.createElement('div');
+        const popUpBtn = document.createElement('button');
+        const popUp = document.createElement('div');
         const deleteBtn = document.createElement('button');
         const editBtn = document.createElement('button');
         const editPopUp = document.createElement('div');
@@ -975,8 +1011,10 @@ const UserInterface = (function () {
         projectNode.classList.add('project');
         projectNode.setAttribute('data-name', newProject.name);
         projectNode.appendChild(projectText);
-        projectNode.appendChild(deleteBtn);
-        projectNode.appendChild(editBtn);
+        projectNode.appendChild(popUpBtn);
+
+        popUp.appendChild(deleteBtn);
+        popUp.appendChild(editBtn);
         
         const nameInput = document.createElement('input');
         nameInput.setAttribute('required', '');
@@ -993,10 +1031,28 @@ const UserInterface = (function () {
         editForm.appendChild(cancelBtn);
         editPopUp.appendChild(editForm);
 
+        popUpBtn.textContent = 'pop!';
+        popUp.classList.add('pop-up');
+
+        popUpBtn.addEventListener('click', () => {
+            if (projectNode.contains(popUp)) {
+                projectNode.removeChild(popUp);
+            } else {
+                const projectNodes = document.querySelectorAll('div.project');
+                Array.from(projectNodes).forEach((node) => {
+                    if (node.querySelector('div.pop-up')) {
+                        const popUp = node.querySelector('div.pop-up');
+                        node.removeChild(popUp);
+                    }
+                });
+                projectNode.appendChild(popUp);
+            }
+        })
+
         editBtn.textContent = 'edit';
         
         editBtn.addEventListener('click', () => {
-            editPopUp.setAttribute('data-name', editBtn.parentElement.getAttribute('data-name'));
+            editPopUp.setAttribute('data-name', editBtn.parentElement.parentElement.getAttribute('data-name'));
             projectNode.replaceWith(editPopUp);
             nameInput.defaultValue = newProject.name;
         })
@@ -1015,7 +1071,6 @@ const UserInterface = (function () {
                 e.preventDefault();
                 const oldName = projectItem.name;
                 projectItem.changeName(nameInput.value);
-                _retitleMain(nameInput.value);
 
                 projectNode.setAttribute('data-name', projectItem.name);
                 projectNode.querySelector('div.name').textContent = projectItem.name;
@@ -1025,7 +1080,8 @@ const UserInterface = (function () {
                     const projectItems = main.querySelectorAll('.to-do');
                     Array.from(projectItems).forEach((item) => {
                         item.querySelector('.project').textContent = projectItem.name;
-                    })
+                    });
+                    _retitleMain(nameInput.value);
                 } else if (!main.hasAttribute('data-project')) {
                     let index = 0;
                     Array.from(document.querySelectorAll('.to-do')).forEach((item) => {
@@ -1039,6 +1095,7 @@ const UserInterface = (function () {
 
                 editForm.reset();
                 editPopUp.replaceWith(projectNode);
+                projectNode.removeChild(popUp);
             }
         });
 
@@ -1070,7 +1127,7 @@ const UserInterface = (function () {
             });
 
             _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
-            const projectItem = deleteBtn.parentElement;
+            const projectItem = deleteBtn.parentElement.parentElement;
             projectItem.remove();
 
             List.deleteProject(newProject);
@@ -1084,8 +1141,9 @@ const UserInterface = (function () {
 
             new Masonry( main, {
                 itemSelector: '.to-do',
-                columnWidth: 300,
+                columnWidth: 250,
                 horizontalOrder: true,
+                gutter: 20,
             });
         })
 
@@ -1107,8 +1165,9 @@ const UserInterface = (function () {
         _resetAttributes(Array.from(toDoItems), 'data-index');
         new Masonry( main, {
             itemSelector: '.to-do',
-            columnWidth: 300,
+            columnWidth: 250,
             horizontalOrder: true,
+            gutter: 20,
         });
     }
 
@@ -1127,8 +1186,9 @@ const UserInterface = (function () {
         _resetAttributes(Array.from(toDoItems), 'data-index');
         new Masonry( main, {
             itemSelector: '.to-do',
-            columnWidth: 300,
+            columnWidth: 250,
             horizontalOrder: true,
+            gutter: 20,
         });
     }
     

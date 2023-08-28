@@ -1,5 +1,6 @@
 import { format, formatISO, isThisWeek, isToday, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
+import './style.css';
 
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
@@ -610,7 +611,6 @@ const UserInterface = (function () {
 
         confirmBtn.addEventListener('click', (e) => {
             const projectNames = List.getProjects().map((item) => item.name);
-            console.log(projectNames);
             if (projectNames.includes(projectInput.value)) {
                 projectInput.setCustomValidity('project name must be unique');
             };
@@ -792,7 +792,7 @@ const UserInterface = (function () {
         description.textContent = toDo.description;
         description.classList.add('description');
         const dueDate = document.createElement('p');
-        dueDate.textContent = format(toDo.dueDate, 'dd MMMM yyyy');
+        dueDate.textContent = format(toDo.dueDate, 'dd MMM yyyy').toLowerCase();
         container.setAttribute('data-priority', toDo.priority);
         dueDate.classList.add('due-date');
         const checklist = createChecklist(toDo);
@@ -1146,7 +1146,7 @@ const UserInterface = (function () {
         toDoItem.querySelector('.title').textContent = toDo.title;
         toDoItem.querySelector('.project').textContent = toDo.project === null ? '' : toDo.project.name;
         toDoItem.querySelector('.description').textContent = toDo.description;
-        toDoItem.querySelector('.due-date').textContent = format(toDo.dueDate, 'dd MMMM yyyy');
+        toDoItem.querySelector('.due-date').textContent = format(toDo.dueDate, 'dd MMM yyyy').toLowerCase();
         
         toDoItem.setAttribute('data-priority', toDo.priority);
     }
@@ -1256,5 +1256,7 @@ const StorageController = (function() {
     }
 })();
 
-DOMBuilder.buildDefaultPage();
-StorageController.populateFromStorage();
+window.addEventListener('load', () => {
+    DOMBuilder.buildDefaultPage();
+    StorageController.populateFromStorage();
+})

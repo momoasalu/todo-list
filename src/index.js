@@ -494,6 +494,7 @@ const UserInterface = (function () {
 
         home.addEventListener('click', () => {
             main.removeAttribute('data-project');
+            main.removeAttribute('data-date');
             renderAll();
         });
 
@@ -1043,6 +1044,7 @@ const UserInterface = (function () {
         projectText.addEventListener('click', () => {
             _retitleMain(newProject.name);
             main.setAttribute('data-project', newProject.name);
+            main.removeAttribute('data-date');
             renderProjectItems(newProject);
             if (!main.hasChildNodes()) {
                 _renderEmptyMessage();
@@ -1069,6 +1071,7 @@ const UserInterface = (function () {
 
             if (main.hasAttribute('data-project')) {
                 main.removeAttribute('data-project');
+                main.removeAttribute('data-date');
                 _retitleMain('home');
                 renderAll();
             }
@@ -1110,6 +1113,10 @@ const UserInterface = (function () {
             const toDo = createToDo(item);
             main.appendChild(toDo);
         })
+        if (!main.hasChildNodes()) {
+            _renderEmptyMessage();
+            return;
+        }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
         new Masonry( main, {

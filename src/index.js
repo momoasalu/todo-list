@@ -1,4 +1,4 @@
-import { format, formatISO, isThisWeek, isToday, toDate } from "date-fns";
+import { format, formatISO, isThisWeek, isToday, parseJSON, toDate } from "date-fns";
 import Masonry from "masonry-layout";
 
 const ChecklistItem = (name, checked) => {
@@ -16,8 +16,12 @@ const ChecklistItem = (name, checked) => {
 }
 
 const ToDo = (title, description, dueDate, priority, project, completed, checklist) => {
-    const addChecklistItem = function (name) {
-        const newChecklistItem = ChecklistItem(name, false);
+    const setProject = function (proj) {
+        this.project = proj
+    }
+
+    const addChecklistItem = function (name, checked=false) {
+        const newChecklistItem = ChecklistItem(name, checked);
         this.checklist.push(newChecklistItem);
         StorageController.updateStorage();
         return newChecklistItem;
@@ -68,6 +72,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         deleteChecklistItem,
         toggleComplete,
         edit,
+        setProject,
     }
 }
 
@@ -75,7 +80,6 @@ const Project = (name, toDos) => {
     const add = function (toDo) {
         if (!toDos.includes(toDo)) {
             toDos.push(toDo);
-            toDo.project = this;
         }
     }
 
@@ -112,6 +116,12 @@ const List = (function () {
         return projects.map(item => item);
     }
 
+    const addToDoToProject = function (toDo, project) {
+        toDo.project = project;
+        project.toDos.push(toDo);
+        StorageController.updateStorage();
+    }
+
     const createToDo = function (title, description, dueDate, priority, project = null) {
         const newToDo = ToDo(title, description, dueDate, priority, project, false, []);
         toDos.push(newToDo);
@@ -122,7 +132,6 @@ const List = (function () {
     const createProject = function (name) {
         const newProject = Project(name, []);
         projects.push(newProject);
-        StorageController.updateStorage();
         return newProject;
     }
 
@@ -159,7 +168,8 @@ const List = (function () {
         createProject,
         deleteTodo,
         deleteProject,
-        getProjectItems
+        getProjectItems,
+        addToDoToProject
     }
 })();
 
@@ -550,6 +560,8 @@ const UserInterface = (function () {
                 createForm.reset();
                 createPopUp.replaceWith(createBtn);
             };
+
+            StorageController.updateStorage();
         });
 
         cancelBtn.addEventListener('click', () => {
@@ -1041,6 +1053,28 @@ const StorageController = (function() {
         }
     }
 
+    const _expandToDo = function (toDo) {
+        const newToDo = List.createToDo(
+            toDo.title, 
+            toDo.description, 
+            parseJSON(toDo.dueDate), 
+            toDo.priority,
+        )
+
+        if (toDo.project) {
+            const project = List.getProjects().find(item => item.name === toDo.project);
+            List.addToDoToProject(newToDo, project);
+        }
+
+        const checkList = JSON.parse(toDo.checkList) 
+        checkList.forEach((item) => {
+            const checkListItem = JSON.parse(item)
+            newToDo.addChecklistItem(checkListItem.name, checkListItem.checked);
+        });
+
+        return(newToDo);
+    }
+
     const updateStorage = function () {
         const JSONtoDos = JSON.stringify(List.getToDos().map((item) => _reduceTodo(item)));
         localStorage.setItem('toDos', JSONtoDos);
@@ -1049,8 +1083,25 @@ const StorageController = (function() {
         localStorage.setItem('projects', JSONprojects);
     }
 
+    const populateFromStorage = function () {
+        const JSONprojects = JSON.parse(localStorage.getItem('projects'));
+        const projectsDiv = document.querySelector('div.projects')
+        const createProjectBtn = document.querySelector('button.create-project');
+
+        JSONprojects.forEach((item) => {
+            projectsDiv.insertBefore(UserInterface.createProject(item), createProjectBtn)
+        });
+
+        const JSONtoDos = JSON.parse(localStorage.getItem('toDos'));
+
+        JSONtoDos.forEach(item => {_expandToDo(item)});
+
+        UserInterface.renderAll();
+    }
+
     return {
         updateStorage,
+        populateFromStorage,
     }
 })();
 

@@ -1,4 +1,4 @@
-import { addDays, addWeeks, format, formatISO, isToday, isWithinInterval, parseJSON } from "date-fns";
+import { addDays, addWeeks, format, formatISO, isAfter, isToday, isWithinInterval, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
 import './style.css';
 
@@ -236,6 +236,7 @@ const UserInterface = (function () {
 
         const dueDate = document.createElement('div');
         dueDate.classList.add('input');
+        dueDate.classList.add('date');
         const dueDateLabel = document.createElement('label');
         dueDateLabel.setAttribute('for', `${purpose}-due-date`);
         dueDateLabel.textContent = 'due date';
@@ -252,6 +253,8 @@ const UserInterface = (function () {
         priority.classList.add('radio');
         const priorityLegend = document.createElement('legend');
         priorityLegend.textContent = 'priority';
+
+        const highPriority = document.createElement('div');
         const highPriorityLabel = document.createElement('label');
         highPriorityLabel.textContent = 'high';
         highPriorityLabel.setAttribute('for', `${purpose}-high-priority`);
@@ -261,6 +264,11 @@ const UserInterface = (function () {
         highPriorityInput.setAttribute('value', 'high');
         highPriorityInput.setAttribute('type', 'radio');
         highPriorityInput.setAttribute('checked', '');
+        highPriority.appendChild(highPriorityLabel);
+        highPriority.appendChild(highPriorityInput);
+        highPriority.classList.add('high-priority');
+
+        const medPriority = document.createElement('div');
         const medPriorityLabel = document.createElement('label');
         medPriorityLabel.textContent = 'medium';
         medPriorityLabel.setAttribute('for', `${purpose}-medium-priority`);
@@ -269,6 +277,11 @@ const UserInterface = (function () {
         medPriorityInput.setAttribute('name', `${purpose}-priority`);
         medPriorityInput.setAttribute('value', 'medium');
         medPriorityInput.setAttribute('type', 'radio');
+        medPriority.appendChild(medPriorityLabel);
+        medPriority.appendChild(medPriorityInput);
+        medPriority.classList.add('medium-priority');
+
+        const lowPriority = document.createElement('div');
         const lowPriorityLabel = document.createElement('label');
         lowPriorityLabel.textContent = 'low';
         lowPriorityLabel.setAttribute('for', `${purpose}-low-priority`);
@@ -277,13 +290,13 @@ const UserInterface = (function () {
         lowPriorityInput.setAttribute('name', `${purpose}-priority`);
         lowPriorityInput.setAttribute('value', 'low');
         lowPriorityInput.setAttribute('type', 'radio');
+        lowPriority.appendChild(lowPriorityLabel);
+        lowPriority.appendChild(lowPriorityInput);
+        
         priority.appendChild(priorityLegend);
-        priority.appendChild(highPriorityInput);
-        priority.appendChild(highPriorityLabel);
-        priority.appendChild(medPriorityInput);
-        priority.appendChild(medPriorityLabel);
-        priority.appendChild(lowPriorityInput);
-        priority.appendChild(lowPriorityLabel);
+        priority.appendChild(highPriority);
+        priority.appendChild(medPriority);
+        priority.appendChild(lowPriority);
 
         form.appendChild(title);
         form.appendChild(description);
@@ -341,7 +354,7 @@ const UserInterface = (function () {
                 } else if (main.hasAttribute('data-date')) {
                     const newToDo = List.createToDo(title, description, dueDate, priority);
                     if (main.getAttribute('data-date') === 'upcoming') {
-                        if (isWithinInterval(item.dueDate, {
+                        if (isWithinInterval(newToDo.dueDate, {
                             start: addDays(new Date().setHours(0, 0, 0, 0), 1),
                             end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
                         })) {
@@ -367,6 +380,9 @@ const UserInterface = (function () {
 
                 if (main.querySelector('.empty-message')) {
                     main.querySelector('.empty-message').remove();
+                    if (!main.hasChildNodes()) {
+                        _renderEmptyMessage();
+                    }
                 }
 
                 form.reset();
@@ -516,10 +532,8 @@ const UserInterface = (function () {
             List.getToDos().forEach((item) => {
                 if (isToday(item.dueDate)) {
                     const toDoItem = createToDo(item);
-                    const deleteBtn = toDoItem.querySelector('button.delete');
-                    const editBtn = toDoItem.querySelector('button.edit');
-                    toDoItem.removeChild(deleteBtn);
-                    toDoItem.removeChild(editBtn);
+                    const buttonsBox = toDoItem.querySelector('div.buttons-box')
+                    toDoItem.removeChild(buttonsBox);
                     main.appendChild(toDoItem);
                 }
             });
@@ -553,10 +567,8 @@ const UserInterface = (function () {
                     end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
                 })) {
                     const toDoItem = createToDo(item);
-                    const deleteBtn = toDoItem.querySelector('button.delete');
-                    const editBtn = toDoItem.querySelector('button.edit');
-                    toDoItem.removeChild(deleteBtn);
-                    toDoItem.removeChild(editBtn);
+                    const buttonsBox = toDoItem.querySelector('div.buttons-box');
+                    toDoItem.removeChild(buttonsBox);
                     main.appendChild(toDoItem);
                 };
             });
@@ -688,6 +700,7 @@ const UserInterface = (function () {
         buttons.classList.add('buttons');
 
         const popUpBtn = document.createElement('button');
+        popUpBtn.classList.add('pop-up');
         const popUp = document.createElement('div');
 
         check.setAttribute('data-order', index);
@@ -783,6 +796,7 @@ const UserInterface = (function () {
             e.preventDefault();
             editForm.reset();
             editPopUp.replaceWith(check);
+            check.removeChild(popUp);
         });
 
         check.appendChild(checkBox);
@@ -812,6 +826,9 @@ const UserInterface = (function () {
             container.classList.add('unchecked');
         }
 
+        const buttonsBox = document.createElement('div');
+        buttonsBox.classList.add('buttons-box')
+
         const checkBox = document.createElement('div');
         checkBox.classList.add('checkbox');
 
@@ -831,7 +848,12 @@ const UserInterface = (function () {
         description.textContent = toDo.description;
         description.classList.add('description');
         const dueDate = document.createElement('p');
-        dueDate.textContent = format(toDo.dueDate, 'dd MMM yyyy').toLowerCase();
+        dueDate.textContent = format(toDo.dueDate, 'dd MMM yyyy');
+        if (isAfter(new Date().setHours(0, 0, 0, 0), toDo.dueDate)) {
+            container.classList.add('past');
+        } else {
+            container.classList.remove('past');
+        }
         container.setAttribute('data-priority', toDo.priority);
         dueDate.classList.add('due-date');
         const checklist = createChecklist(toDo);
@@ -911,7 +933,7 @@ const UserInterface = (function () {
 
         deleteBtn.addEventListener('click', () => {
             List.deleteTodo(toDo);
-            const toDoItem = deleteBtn.parentElement
+            const toDoItem = deleteBtn.parentElement.parentElement
             main.removeChild(toDoItem);
             if (!main.hasChildNodes()) {
                 _renderEmptyMessage();
@@ -930,7 +952,7 @@ const UserInterface = (function () {
         editBtn.addEventListener('click', () => {
             const editDialog = document.querySelector('dialog.edit');
             editDialog.showModal();
-            const index = editBtn.parentElement.getAttribute('data-index');
+            const index = editBtn.parentElement.parentElement.getAttribute('data-index');
             editDialog.setAttribute('data-index', index);
             const projectSelect = editDialog.querySelector('select');
             projectSelect.textContent = '';
@@ -980,14 +1002,16 @@ const UserInterface = (function () {
             }); 
         });
 
+        buttonsBox.appendChild(editBtn);
+        buttonsBox.appendChild(deleteBtn)
+
         container.classList.add('to-do');
         container.append(titleBox);
         container.append(project);
         container.append(description);
         container.append(dueDate);
         container.append(checklist);
-        container.append(deleteBtn);
-        container.append(editBtn);
+        container.append(buttonsBox);
 
         return container;
     }
@@ -998,6 +1022,7 @@ const UserInterface = (function () {
         const newProject = List.createProject(name);
         const projectNode = document.createElement('div');
         const popUpBtn = document.createElement('button');
+        popUpBtn.classList.add('pop-up');
         const popUp = document.createElement('div');
         const deleteBtn = document.createElement('button');
         const editBtn = document.createElement('button');
@@ -1102,6 +1127,7 @@ const UserInterface = (function () {
         cancelBtn.addEventListener('click', () => {
             editForm.reset();
             editPopUp.replaceWith(projectNode);
+            projectNode.removeChild(popUp);
         })
 
         projectText.addEventListener('click', () => {
@@ -1204,15 +1230,20 @@ const UserInterface = (function () {
                 return;
             }
             let project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
-            toDoItem = main.querySelector(`.to-do[data-index="${List.getProjectItems(project).findIndex((item) => item === toDo)}"]`);
+            toDoItem = main.querySelector(`.to-do[data-index="${List.getProjectItems(project).indexOf(toDo)}"]`);
         } else {
-            toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().findIndex((item) => item === toDo)}"]`);
+            toDoItem = main.querySelector(`.to-do[data-index="${List.getToDos().indexOf(toDo)}"]`);
         }
 
         toDoItem.querySelector('.title').textContent = toDo.title;
         toDoItem.querySelector('.project').textContent = toDo.project === null ? '' : toDo.project.name;
         toDoItem.querySelector('.description').textContent = toDo.description;
-        toDoItem.querySelector('.due-date').textContent = format(toDo.dueDate, 'dd MMM yyyy').toLowerCase();
+        toDoItem.querySelector('.due-date').textContent = format(toDo.dueDate, 'dd MMM yyyy');
+        if (isAfter(new Date().setHours(0, 0, 0, 0), toDo.dueDate)) {
+            toDoItem.classList.add('past');
+        } else {
+            toDoItem.classList.remove('past');
+        }
         
         toDoItem.setAttribute('data-priority', toDo.priority);
     }
@@ -1242,6 +1273,18 @@ const DOMBuilder = (function () {
         UserInterface.buildSidebar();
         UserInterface.buildNewToDoDialog();
         UserInterface.buildEditToDoDialog();
+
+        window.addEventListener('click', (e) => {
+            const popUpButtons = Array.from(document.querySelectorAll('button.pop-up'));
+            if (!popUpButtons.includes(e.target)) {
+                if (document.querySelector('div.pop-up')) {
+                    const popUps = Array.from(document.querySelectorAll('div.pop-up'));
+                    popUps.forEach((popUp) => {
+                        popUp.remove();
+                    })
+                }
+            }
+        })
     }
 
     return {

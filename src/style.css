@@ -4,6 +4,7 @@ body {
     display: grid;
     grid-template-columns: 250px 1fr;
     grid-template-rows: 100px;
+    --faded: rgb(97, 92, 92);
 }
 
 h1, h2, h3, h4, h5, p {
@@ -11,36 +12,107 @@ h1, h2, h3, h4, h5, p {
 }
 
 header {
+    font-size: 2.75rem;
     grid-column: span 2;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: aqua;
+    border-bottom: 1px black solid;
 }
 
 aside {
     background-color: chocolate;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-right: 1px solid black;
+}
+
+aside > div.projects {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 5px;
+}
+
+div.projects > div.project {
+    border: 1px solid black;
+    padding: 5px;
 }
 
 main {
     background-color: pink;
+    padding: 20px;
 }
 
 div.to-do {
+    box-sizing: border-box;
     width: 250px;
+    padding: 10px;
+    border: 1px solid black;
+    display: grid;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.to-do[data-priority='high'] {
+    outline: 1px solid red;
+}
+
+.to-do[data-priority='medium'] {
+    outline: 1px solid yellow;
+}
+
+.to-do[data-priority='low'] {
+    outline: 1px solid green;
+}
+
+div.to-do.checked {
+    outline: none;
+}
+
+div.to-do.past {
+    border: var(--faded) 1px solid;
+    color: var(--faded);
+    outline: none;
+}
+
+div.to-do > div.checklist {
+    display: grid;
+    gap: 5px;
+    padding: 5px;
+    border: 1px black solid;
+}
+
+div.to-do.past > div.checklist {
+    border: var(--faded) 1px solid;
+    color: var(--faded);
+    outline: none;
 }
 
 div.to-do > div.title-box {
     display: grid;
     grid-auto-flow: column;
-    min-height: 50px;
     align-items: center;
     justify-content: space-between;
 }
 
 div.title-box > div.checkbox {
-    width: 10px;
-    height: 10px;
+    border-radius: 9px;
+    width: 15px;
+    height: 15px;
+    align-self: start;
+}
+
+div.title-box > h4 {
+    font-size: 1.25rem;
+    max-width: 200px;
+}
+
+div.title-box {
+    word-wrap: break-word;
 }
 
 div.to-do.checked > div.title-box > div.checkbox {
@@ -52,9 +124,22 @@ div.to-do.unchecked > div.title-box > div.checkbox {
     border: 1px black solid;
 }
 
+div.to-do.past > div.title-box > div.checkbox {
+    border: 1px var(--faded) solid;
+}
+
+div.to-do.checked.past > div.title-box > div.checkbox {
+    background-color: var(--faded);
+}
+
+div.to-do.checked > div.title-box > h4{
+    text-decoration: line-through;
+}
+
 div.project {
     display: grid;
     grid-auto-flow: column;
+    grid-template-columns: 1fr auto;
     justify-content: space-between;
     position: relative;
 }
@@ -62,6 +147,9 @@ div.project {
 div.check-item > div.checklist-checkbox {
     width: 10px;
     height: 10px;
+    align-self: start;
+    margin-top: 3px;
+    border-radius: 1px;
 }
 
 div.check-item.checked > div.checklist-checkbox {
@@ -73,17 +161,130 @@ div.check-item.unchecked > div.checklist-checkbox {
     border: 1px solid black;
 }
 
+div.check-item > button.pop-up {
+    align-self: start;
+}
+
+div.to-do.past div.checklist-checkbox {
+    border: gray 1px solid;
+}
+
+div.to-do.past div.check-item.checked > div.checklist-checkbox {
+    background-color: gray;
+}
+
 div.check-item {
     display: grid;
+    gap: 5px;
     grid-auto-flow: column;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     position: relative;
+    min-height: 20px;
+    word-wrap: break-word;
+}
+
+div.check-item > p {
+    max-width: 150px;
+}
+
+div.buttons-box {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: end;
+    gap: 5px;
 }
 
 div.pop-up {
     position: absolute;
-    right: 0;
+    right: -1px;
     top: -50px;
     display: grid;
+    border: 1px solid black;
+    background-color: black;
+    box-shadow: rgba(0, 0, 0, 0.4) 0.2rem 0.5rem 1rem;;
+    padding: 5px;
+}
+
+div.pop-up > button {
+    border: 1px black solid;
+    background-color: white;
+}
+
+div.projects form,
+div.checklist form {
+    border: 1px solid black;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+div.projects form > input,
+div.checklist form > input {
+    grid-column: span 2;
+    border: none;
+}
+
+div.projects form > button,
+div.checklist form > button {
+    border: none;
+    background-color: white;
+}
+
+dialog {
+    width: 300px;
+    border: 1px solid black;
+}
+
+dialog form {
+    display: grid;
+    gap: 10px;
+}
+
+dialog .input {
+    display: grid;
+}
+
+dialog .input.radio {
+    grid-auto-flow: column;
+    border: 1px black solid;
+    align-content: space-between;
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    padding-block-start: 5px;
+    padding-block-end: 10px;
+}
+
+dialog .input.radio div {
+    display: grid;
+    justify-content: center;
+    justify-items: center;
+}
+
+dialog .input > input,
+dialog .input > textarea,
+dialog .input > select {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+dialog .input.date {
+    grid-auto-flow: column;
+    grid-template-columns: auto auto;
+    gap: 5px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+dialog div.close {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 5px;
+}
+
+dialog div.close > button {
+    height: 30px;
+    border: 1px solid black;
+    background-color: white;
 }

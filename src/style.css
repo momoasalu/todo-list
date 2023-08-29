@@ -136,6 +136,10 @@ div.to-do.checked > div.title-box > h4{
     text-decoration: line-through;
 }
 
+div.to-do.past div.check-item.checked > div.checklist-checkbox {
+    background-color: gray;
+}
+
 div.project {
     display: grid;
     grid-auto-flow: column;
@@ -169,10 +173,6 @@ div.to-do.past div.checklist-checkbox {
     border: gray 1px solid;
 }
 
-div.to-do.past div.check-item.checked > div.checklist-checkbox {
-    background-color: gray;
-}
-
 div.check-item {
     display: grid;
     gap: 5px;
@@ -186,6 +186,23 @@ div.check-item {
 
 div.check-item > p {
     max-width: 150px;
+}
+
+div.checklist.minimized > button,
+div.checklist.minimized > div.check-item {
+    display: none;
+} 
+
+div.checklist.minimized > div.expander {
+    content: 'mini';
+}
+
+div.checklist.expanded > div.expander {
+    content: icon;
+}
+
+div.expander {
+    text-align: right;
 }
 
 div.buttons-box {

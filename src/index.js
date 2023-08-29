@@ -477,6 +477,7 @@ const UserInterface = (function () {
 
                 editToDo(toDo, title, description, dueDate, priority, project);
                 dialog.removeAttribute('data-index');
+                form.reset();
                 dialog.close();
                 new Masonry( main, {
                     itemSelector: '.to-do',
@@ -808,7 +809,33 @@ const UserInterface = (function () {
 
     const createChecklist = function (toDo) {
         const container = document.createElement('div');
+        const expander = document.createElement('div');
+        expander.classList.add('expander');
+        expander.textContent = '-'
+
+
+        expander.addEventListener('click', () => {
+            container.classList.toggle('expanded');
+            container.classList.toggle('minimized');
+
+            if (container.classList.contains('expanded')) {
+                expander.textContent = '-'
+            } else {
+                expander.textContent = '+'
+            }
+
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20,
+            });
+        })
+
+        container.appendChild(expander);
         container.classList.add('checklist');
+        container.classList.add('expanded');
+
         toDo.checklist.forEach((item) => {
             container.appendChild(createCheckListItem(item, toDo));
         });
@@ -951,7 +978,6 @@ const UserInterface = (function () {
 
         editBtn.addEventListener('click', () => {
             const editDialog = document.querySelector('dialog.edit');
-            editDialog.showModal();
             const index = editBtn.parentElement.parentElement.getAttribute('data-index');
             editDialog.setAttribute('data-index', index);
             const projectSelect = editDialog.querySelector('select');
@@ -972,6 +998,7 @@ const UserInterface = (function () {
                 const project = List.getProjects().find((item) => item.name === main.getAttribute('data-project'));
                 toDo = List.getProjectItems(project)[index];
             } else {
+                console.log(List.getToDos());
                 toDo = List.getToDos()[index];
             }
 
@@ -1000,6 +1027,7 @@ const UserInterface = (function () {
                     item.setAttribute('selected', '');
                 }
             }); 
+            editDialog.showModal();
         });
 
         buttonsBox.appendChild(editBtn);

@@ -1326,6 +1326,10 @@ const StorageController = (function() {
             List.addToDoToProject(newToDo, project);
         }
 
+        if (toDo.completed) {
+            newToDo.toggleComplete();
+        }
+
         const checkList = JSON.parse(toDo.checkList) 
         checkList.forEach((item) => {
             const checkListItem = JSON.parse(item)

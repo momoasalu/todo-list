@@ -1,5 +1,6 @@
 import { addDays, addWeeks, format, formatISO, isAfter, isToday, isWithinInterval, parseJSON } from "date-fns";
 import Masonry from "masonry-layout";
+import Sortable from "sortablejs";
 import './style.css';
 
 const ChecklistItem = (name, checked) => {
@@ -179,6 +180,15 @@ const List = (function () {
         return toDos.filter((item) => item.project === proj);
     }
 
+    const reorderProjects = function (projectList) {
+        projects.sort((a, b) => {
+            const indexA = projectList.findIndex((item) => a.name === item);
+            const indexB = projectList.findIndex((item) => b.name === item);
+            return indexA < indexB ? -1 : 1;
+        });
+        StorageController.updateStorage();
+    }
+
     return {
         getToDos,
         getProjects,
@@ -187,7 +197,8 @@ const List = (function () {
         deleteTodo,
         deleteProject,
         getProjectItems,
-        addToDoToProject
+        addToDoToProject,
+        reorderProjects
     }
 })();
 
@@ -644,6 +655,7 @@ const UserInterface = (function () {
                 } else {
                     projectsDiv.insertBefore(createProject(projectInput.value), document.querySelector('.create-pop-up'));
                 }
+                _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id');
                 createForm.reset();
                 createPopUp.replaceWith(createBtn);
             };
@@ -654,6 +666,10 @@ const UserInterface = (function () {
         cancelBtn.addEventListener('click', () => {
             createForm.reset();
             createPopUp.replaceWith(createBtn);
+        });
+
+        Sortable.create(projectsDiv, {
+            draggable: '.project',
         });
 
         return projectsDiv;
@@ -776,11 +792,23 @@ const UserInterface = (function () {
             const container = check.parentElement;
             check.remove();
             _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20
+            });
         });
 
         editBtn.addEventListener('click', () => {
             check.replaceWith(editPopUp);
             editInput.defaultValue = checkText.textContent;
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20
+            });
         });
 
         editConfirmBtn.addEventListener('click', (e) => {
@@ -791,6 +819,12 @@ const UserInterface = (function () {
                 editPopUp.replaceWith(check);
                 check.removeChild(popUp);
             }
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20
+            });
         });
 
         editCancelBtn.addEventListener('click', (e) => {
@@ -798,6 +832,12 @@ const UserInterface = (function () {
             editForm.reset();
             editPopUp.replaceWith(check);
             check.removeChild(popUp);
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20
+            });
         });
 
         check.appendChild(checkBox);
@@ -916,6 +956,13 @@ const UserInterface = (function () {
 
         addChecklistItemBtn.addEventListener('click', () => {
             addChecklistItemBtn.replaceWith(addPopUp);
+            
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20,
+            });
         });
 
         addConfirmBtn.addEventListener('click', (e) => {
@@ -940,6 +987,12 @@ const UserInterface = (function () {
             e.preventDefault();
             addForm.reset();
             addPopUp.replaceWith(addChecklistItemBtn);
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20,
+            });
         })
 
         checkBox.addEventListener('click', () => {
@@ -1047,8 +1100,10 @@ const UserInterface = (function () {
     const createProject = function (name) {
         const main = document.querySelector('#main');
 
-        const newProject = List.createProject(name);
         const projectNode = document.createElement('div');
+        projectNode.setAttribute('data-id', List.getProjects().length);
+        const newProject = List.createProject(name);
+        
         const popUpBtn = document.createElement('button');
         popUpBtn.classList.add('pop-up');
         const popUp = document.createElement('div');
@@ -1191,7 +1246,9 @@ const UserInterface = (function () {
                 main.removeAttribute('data-date');
                 _retitleMain('home');
                 renderAll();
-            }
+            };
+
+            _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id')
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -1199,7 +1256,22 @@ const UserInterface = (function () {
                 horizontalOrder: true,
                 gutter: 20,
             });
-        })
+        });
+
+        projectNode.setAttribute('draggable', 'true');
+        
+        projectNode.addEventListener('dragstart', (e) => {
+            projectNode.style.opacity = 0.5;
+        });
+
+        projectNode.addEventListener('dragend', (e) => {
+            projectNode.style.opacity = 1;
+        });
+
+        projectNode.addEventListener('drop', () => {
+            const projectNames = Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).map((item) => item.querySelector('div.name').textContent);
+            List.reorderProjects(projectNames);
+        });
 
         return projectNode;
     }

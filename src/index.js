@@ -44,6 +44,9 @@ import './style.css';
         <title>menu</title>
         <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
     </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>chevron-double-up</title><path d="M7.41,18.41L6,17L12,11L18,17L16.59,18.41L12,13.83L7.41,18.41M7.41,12.41L6,11L12,5L18,11L16.59,12.41L12,7.83L7.41,12.41Z" /></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>chevron-double-down</title><path d="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,11.59L18,13L12,19L6,13L7.41,11.59L12,16.17L16.59,11.59Z" /></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>pencil-outline</title><path d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z" /></svg>
  */
 
 const ChecklistItem = (name, checked) => {
@@ -413,15 +416,15 @@ const UserInterface = (function () {
                             end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
                         })) {
                             const toDoNode = createToDo(newToDo);
-                            toDoNode.removeChild(toDoNode.querySelector('button.delete'));
-                            toDoNode.removeChild(toDoNode.querySelector('button.edit'));
+                            toDoNode.querySelector('button.delete').remove();
+                            toDoNode.querySelector('button.edit').remove();
                             main.appendChild(toDoNode);
                         }
                     } else if (main.getAttribute('data-date') === 'today') {
                         if (isToday(newToDo.dueDate)) {
                             const toDoNode = createToDo(newToDo);
-                            toDoNode.removeChild(toDoNode.querySelector('button.delete'));
-                            toDoNode.removeChild(toDoNode.querySelector('button.edit'));
+                            toDoNode.querySelector('button.delete').remove();
+                            toDoNode.querySelector('button.edit').remove();
                             main.appendChild(toDoNode);
                         }
                     }
@@ -446,7 +449,8 @@ const UserInterface = (function () {
                     itemSelector: '.to-do',
                     columnWidth: 250,
                     horizontalOrder: true,
-                    gutter: 20
+                    gutter: 20,
+                    fitWidth: true,
                 });
             }
         });
@@ -538,6 +542,7 @@ const UserInterface = (function () {
                     columnWidth: 250,
                     horizontalOrder: true,
                     gutter: 20,
+                    fitWidth: true,
                 });
             }
         });
@@ -603,6 +608,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
 
         })
@@ -638,6 +644,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -684,6 +691,7 @@ const UserInterface = (function () {
         
         createBtn.addEventListener('click', () => {
             createBtn.replaceWith(createPopUp);
+            projectInput.focus();
         })
 
         confirmBtn.addEventListener('click', (e) => {
@@ -743,6 +751,11 @@ const UserInterface = (function () {
 
         main.appendChild(title);
         main.appendChild(mainBox);
+
+        Sortable.create( mainBox, {
+            draggable: '.to-do',
+            direction: 'horizontal'
+        })
     }
 
     const _resetAttributes = function (array, attr) {
@@ -762,6 +775,16 @@ const UserInterface = (function () {
 
         const popUpBtn = document.createElement('button');
         popUpBtn.classList.add('pop-up');
+
+        const popUpBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        popUpBtnIcon.setAttribute('viewBox', '0 0 24 24')
+        const popUpBtnIconTitle = document.createElement('title');
+        const popUpBtnIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        popUpBtnIconTitle.textContent = 'menu';
+        popUpBtnIconPath.setAttribute('d', 'M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z');
+
+        popUpBtnIcon.appendChild(popUpBtnIconTitle);
+        popUpBtnIcon.appendChild(popUpBtnIconPath);
         const popUp = document.createElement('div');
 
         check.setAttribute('data-order', index);
@@ -801,10 +824,27 @@ const UserInterface = (function () {
         popUp.appendChild(deleteBtn);
         popUp.appendChild(editBtn);
 
-        popUpBtn.textContent = 'pop!';
+        popUpBtn.appendChild(popUpBtnIcon);
         popUp.classList.add('pop-up');
 
         popUpBtn.addEventListener('click', () => {
+            if (check.contains(popUp)) {
+                check.removeChild(popUp);
+            } else {
+                const container = check.parentElement;
+                const checkNodes = container.querySelectorAll('div.check-item');
+                Array.from(checkNodes).forEach((node) => {
+                    if (node.querySelector('div.pop-up')) {
+                        const popUp = node.querySelector('div.pop-up');
+                        node.removeChild(popUp);
+                    }
+                });
+                check.appendChild(popUp);
+            }
+        })
+
+        popUpBtnIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (check.contains(popUp)) {
                 check.removeChild(popUp);
             } else {
@@ -840,7 +880,8 @@ const UserInterface = (function () {
                 itemSelector: '.to-do',
                 columnWidth: 250,
                 horizontalOrder: true,
-                gutter: 20
+                gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -852,7 +893,8 @@ const UserInterface = (function () {
                 itemSelector: '.to-do',
                 columnWidth: 250,
                 horizontalOrder: true,
-                gutter: 20
+                gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -868,7 +910,8 @@ const UserInterface = (function () {
                 itemSelector: '.to-do',
                 columnWidth: 250,
                 horizontalOrder: true,
-                gutter: 20
+                gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -881,7 +924,8 @@ const UserInterface = (function () {
                 itemSelector: '.to-do',
                 columnWidth: 250,
                 horizontalOrder: true,
-                gutter: 20
+                gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -896,17 +940,39 @@ const UserInterface = (function () {
         const container = document.createElement('div');
         const expander = document.createElement('div');
         expander.classList.add('expander');
-        expander.textContent = '-'
 
+        const expandIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        expandIcon.setAttribute('viewBox', '0 0 24 24');
+
+        const expandIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const expandIconTitle = document.createElement('title');
+
+        expandIconTitle.textContent = 'chevron-double-down';
+        expandIconPath.setAttribute('d', 'M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,11.59L18,13L12,19L6,13L7.41,11.59L12,16.17L16.59,11.59Z');
+
+        const miniIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const miniIconTitle = document.createElement('title');
+
+        miniIconTitle.textContent = 'chevron-double-up';
+        miniIconPath.setAttribute('d', 'M7.41,18.41L6,17L12,11L18,17L16.59,18.41L12,13.83L7.41,18.41M7.41,12.41L6,11L12,5L18,11L16.59,12.41L12,7.83L7.41,12.41Z');
+
+        expandIcon.appendChild(miniIconTitle);
+        expandIcon.appendChild(miniIconPath);
+
+        expander.appendChild(expandIcon);
 
         expander.addEventListener('click', () => {
             container.classList.toggle('expanded');
             container.classList.toggle('minimized');
 
             if (container.classList.contains('expanded')) {
-                expander.textContent = '-'
+                expandIcon.textContent = '';
+                expandIcon.appendChild(miniIconTitle);
+                expandIcon.appendChild(miniIconPath);
             } else {
-                expander.textContent = '+'
+                expandIcon.textContent = '';
+                expandIcon.appendChild(expandIconTitle);
+                expandIcon.appendChild(expandIconPath);
             }
 
             new Masonry( main, {
@@ -914,6 +980,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
         })
 
@@ -939,7 +1006,7 @@ const UserInterface = (function () {
         }
 
         const buttonsBox = document.createElement('div');
-        buttonsBox.classList.add('buttons-box')
+        buttonsBox.classList.add('buttons-box');
 
         const checkBox = document.createElement('div');
         checkBox.classList.add('checkbox');
@@ -991,11 +1058,33 @@ const UserInterface = (function () {
 
         const deleteBtn = document.createElement('button');
         deleteBtn.classList.add('delete');
-        deleteBtn.textContent = 'delete';
+
+        const deleteBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        deleteBtnIcon.setAttribute('viewBox', '0 0 22 22');
+        const deleteBtnIconTitle = document.createElement('title');
+        const deleteBtnIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        deleteBtnIconTitle.textContent = 'trash';
+        deleteBtnIconPath.setAttribute('d', 'M10 7V16H8V7H10M12 7H14V16H12V7M8 2H14V3H19V5H18V19H17V20H5V19H4V5H3V3H8V2M6 5V18H16V5H6Z');
+
+        deleteBtnIcon.appendChild(deleteBtnIconTitle);
+        deleteBtnIcon.appendChild(deleteBtnIconPath);
+
+        deleteBtn.appendChild(deleteBtnIcon);
 
         const editBtn = document.createElement('button');
         editBtn.classList.add('edit');
-        editBtn.textContent = 'edit';
+
+        const editBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        editBtnIcon.setAttribute('viewBox', '0 0 22 22');
+        const editBtnIconTitle = document.createElement('title');
+        const editBtnIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        editBtnIconTitle.textContent = 'pencil';
+        editBtnIconPath.setAttribute('d', 'M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z');
+
+        editBtnIcon.appendChild(editBtnIconTitle);
+        editBtnIcon.appendChild(editBtnIconPath);
+
+        editBtn.appendChild(editBtnIcon);
 
         checklist.appendChild(addChecklistItemBtn);
 
@@ -1008,6 +1097,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -1025,6 +1115,7 @@ const UserInterface = (function () {
                     columnWidth: 250,
                     horizontalOrder: true,
                     gutter: 20,
+                    fitWidth: true,
                 });
             }
         });
@@ -1038,6 +1129,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
         })
 
@@ -1133,6 +1225,36 @@ const UserInterface = (function () {
         buttonsBox.appendChild(deleteBtn)
 
         container.classList.add('to-do');
+        container.setAttribute('draggable', true);
+
+        container.addEventListener('dragstart', () => {
+
+        });
+
+        container.addEventListener('dragover', (e) => {
+            container.classList.add('drop-zone');
+        });
+
+        container.addEventListener('dragleave', (e) => {
+            container.classList.remove('drop-zone')
+        });
+
+        container.addEventListener('dragend', (e) => {
+            main.querySelectorAll('div.to-do').forEach((item) => {
+                item.classList.remove('drop-zone');
+            });
+        })
+
+        container.addEventListener('drop', () => {
+            new Masonry( main, {
+                itemSelector: '.to-do',
+                columnWidth: 250,
+                horizontalOrder: true,
+                gutter: 20,
+                fitWidth: true,
+            });
+        })
+
         container.append(titleBox);
         container.append(project);
         container.append(description);
@@ -1152,6 +1274,17 @@ const UserInterface = (function () {
         
         const popUpBtn = document.createElement('button');
         popUpBtn.classList.add('pop-up');
+
+        const popUpBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        popUpBtnIcon.setAttribute('viewBox', '0 0 24 24')
+        const popUpBtnIconTitle = document.createElement('title');
+        const popUpBtnIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        popUpBtnIconTitle.textContent = 'menu';
+        popUpBtnIconPath.setAttribute('d', 'M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z');
+
+        popUpBtnIcon.appendChild(popUpBtnIconTitle);
+        popUpBtnIcon.appendChild(popUpBtnIconPath);
+
         const popUp = document.createElement('div');
         const deleteBtn = document.createElement('button');
         const editBtn = document.createElement('button');
@@ -1186,10 +1319,26 @@ const UserInterface = (function () {
         editForm.appendChild(cancelBtn);
         editPopUp.appendChild(editForm);
 
-        popUpBtn.textContent = 'pop!';
+        popUpBtn.appendChild(popUpBtnIcon);
         popUp.classList.add('pop-up');
 
         popUpBtn.addEventListener('click', () => {
+            if (projectNode.contains(popUp)) {
+                projectNode.removeChild(popUp);
+            } else {
+                const projectNodes = document.querySelectorAll('div.project');
+                Array.from(projectNodes).forEach((node) => {
+                    if (node.querySelector('div.pop-up')) {
+                        const popUp = node.querySelector('div.pop-up');
+                        node.removeChild(popUp);
+                    }
+                });
+                projectNode.appendChild(popUp);
+            }
+        });
+
+        popUpBtnIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (projectNode.contains(popUp)) {
                 projectNode.removeChild(popUp);
             } else {
@@ -1303,6 +1452,7 @@ const UserInterface = (function () {
                 columnWidth: 250,
                 horizontalOrder: true,
                 gutter: 20,
+                fitWidth: true,
             });
         });
 
@@ -1342,6 +1492,7 @@ const UserInterface = (function () {
             columnWidth: 250,
             horizontalOrder: true,
             gutter: 20,
+            fitWidth: true,
         });
     }
 
@@ -1363,6 +1514,7 @@ const UserInterface = (function () {
             columnWidth: 250,
             horizontalOrder: true,
             gutter: 20,
+            fitWidth: true,
         });
     }
     

@@ -13,6 +13,15 @@ h1, h2, h3, h4, h5, p {
     margin: 0;
 }
 
+svg {
+    width: 20px;
+    height: 20px;
+}
+
+svg path {
+    fill: currentColor;
+}
+
 header {
     font-size: 2.75rem;
     grid-column: span 2;
@@ -44,6 +53,17 @@ div.projects > div.project {
 
 main {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+}
+
+main > h1 {
+    align-self: center;
+}
+
+main > div#main {
+    align-self: center;
 }
 
 div.to-do {
@@ -77,6 +97,10 @@ div.to-do.past {
     border: var(--faded) 1px solid;
     color: var(--faded);
     outline: none;
+}
+
+div.to-do.drop-zone {
+    border-style: dashed;
 }
 
 div.to-do > div.checklist {
@@ -126,6 +150,10 @@ div.to-do.unchecked > div.title-box > div.checkbox {
 
 div.to-do.past > div.title-box > div.checkbox {
     border: 1px var(--faded) solid;
+}
+
+div.to-do.past > div.buttons-box > button {
+    color: var(--faded);
 }
 
 div.to-do.checked.past > div.title-box > div.checkbox {
@@ -193,6 +221,23 @@ div.checklist.minimized > div.check-item {
     display: none;
 } 
 
+div.expander svg {
+    height: 15px;
+    width: 15px;
+}
+
+button.pop-up {
+    border: none;
+    padding: 0;
+    margin-top: 2px;
+    background-color: transparent;
+}
+
+button.pop-up > svg {
+    width: 15px;
+    height: 15px;
+}
+
 div.expander {
     text-align: right;
 }
@@ -201,17 +246,18 @@ div.buttons-box {
     display: grid;
     grid-auto-flow: column;
     justify-content: end;
-    gap: 5px;
+    gap: 3px;
+    padding-top: 5px;
 }
 
 div.projects div.pop-up {
-    right: -5px;
-    top: -55px;
+    right: -15px;
+    top: -48px;
 }
 
 div.checklist div.pop-up {
-    right: -8px;
-    top: -55px;
+    right: -20px;
+    top: -53px;
 }
 
 div.pop-up {
@@ -235,6 +281,36 @@ div.pop-up > button {
 
 div.pop-up > button:hover {
     background-color: rgb(201, 201, 201);
+}
+
+.buttons-box > button {
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    height: 17px;
+    width: 17px;
+}
+
+.buttons-box svg{
+    height: 15px;
+    width: 15px;
+}
+
+.buttons-box button:last-child svg {
+    height: 15px;
+    width: 15px;
+}
+
+.buttons-box button:hover svg {
+    margin-top: -5px;
+}
+
+.buttons-box button:last-child:hover {
+    color: gray;
+}
+
+.buttons-box button:first-child:hover {
+    color: rgb(111, 60, 28);
 }
 
 div.projects form,

@@ -235,6 +235,12 @@ const List = (function () {
         StorageController.updateStorage();
     }
 
+    const reorderToDos = function (oldIndex, newIndex) {
+        const [toDo] = toDos.splice(oldIndex, 1)
+        toDos.splice(newIndex, 0, toDo);
+        StorageController.updateStorage();
+    }
+
     return {
         getToDos,
         getProjects,
@@ -244,7 +250,8 @@ const List = (function () {
         deleteProject,
         getProjectItems,
         addToDoToProject,
-        reorderProjects
+        reorderProjects,
+        reorderToDos
     }
 })();
 
@@ -560,11 +567,16 @@ const UserInterface = (function () {
     const buildHeader = function () {
         const header = document.querySelector('header');
 
+        const filler = document.createElement('div');
+
         const heading = document.createElement('h1');
-        heading.textContent = 'to-do list!'
+        heading.textContent = 'to-do list!';
+        header.appendChild(filler);
         header.appendChild(heading);
 
     }
+
+    let mainSortable;
 
     const buildSidebar = function () {
         const main = document.querySelector('#main');
@@ -601,7 +613,13 @@ const UserInterface = (function () {
             if (!main.hasChildNodes()) {
                 _renderEmptyMessage();
                 return;
-            }
+            };
+
+            main.querySelectorAll('.to-do').forEach((item) => {
+                item.setAttribute('draggable', false);
+            });
+
+            mainSortable.option('disabled', true);
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -638,6 +656,12 @@ const UserInterface = (function () {
                 _renderEmptyMessage();
                 return;
             }
+
+            main.querySelectorAll('.to-do').forEach((item) => {
+                item.setAttribute('draggable', false);
+            });
+
+            mainSortable.option('disabled', true);
 
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -752,10 +776,10 @@ const UserInterface = (function () {
         main.appendChild(title);
         main.appendChild(mainBox);
 
-        Sortable.create( mainBox, {
+        mainSortable = new Sortable( mainBox, {
             draggable: '.to-do',
             direction: 'horizontal'
-        })
+        });
     }
 
     const _resetAttributes = function (array, attr) {
@@ -1222,10 +1246,12 @@ const UserInterface = (function () {
         });
 
         buttonsBox.appendChild(editBtn);
-        buttonsBox.appendChild(deleteBtn)
+        buttonsBox.appendChild(deleteBtn);
 
         container.classList.add('to-do');
-        container.setAttribute('draggable', true);
+        if (!main.hasAttribute('data-project') && !main.hasAttribute('data-date')) {
+            container.setAttribute('draggable', true);
+        }
 
         container.addEventListener('dragstart', () => {
 
@@ -1240,6 +1266,11 @@ const UserInterface = (function () {
         });
 
         container.addEventListener('dragend', (e) => {
+            const oldIndex = container.getAttribute('data-index');
+            _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
+            const newIndex = container.getAttribute('data-index');
+            List.reorderToDos(oldIndex, newIndex);
+            console.log(oldIndex, newIndex);
             main.querySelectorAll('div.to-do').forEach((item) => {
                 item.classList.remove('drop-zone');
             });
@@ -1487,6 +1518,13 @@ const UserInterface = (function () {
         }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
+
+        main.querySelectorAll('.to-do').forEach((item) => {
+            item.setAttribute('draggable', true);
+        });
+
+        mainSortable.option('disabled', false);
+
         new Masonry( main, {
             itemSelector: '.to-do',
             columnWidth: 250,
@@ -1509,6 +1547,13 @@ const UserInterface = (function () {
         }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
+
+        main.querySelectorAll('.to-do').forEach((item) => {
+            item.setAttribute('draggable', false);
+        });
+
+        mainSortable.option('disabled', true);
+
         new Masonry( main, {
             itemSelector: '.to-do',
             columnWidth: 250,

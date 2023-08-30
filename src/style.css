@@ -25,10 +25,13 @@ svg path {
 header {
     font-size: 2.75rem;
     grid-column: span 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 275px 1fr;
     border-bottom: 1px black solid;
+}
+
+header h1 {
+    justify-self: center;
 }
 
 aside {
@@ -101,6 +104,7 @@ div.to-do.past {
 
 div.to-do.drop-zone {
     border-style: dashed;
+    outline-style: dashed;
 }
 
 div.to-do > div.checklist {

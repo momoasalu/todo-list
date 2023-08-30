@@ -5,48 +5,41 @@ import './style.css';
 
 /*
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>chevron-down</title>
-        <path d="M16 10H17V9H18V7H16V8H15V9H14V10H13V11H12V12H10V11H9V10H8V9H7V8H6V7H4V9H5V10H6V11H7V12H8V13H9V14H10V15H12V14H13V13H14V12H15V11H16" />
+        <title>gamepad-down</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 15H9V19H13V15Z" />
     </svg>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>chevron-up</title>
-        <path d="M6 12H5V13H4V15H6V14H7V13H8V12H9V11H10V10H12V11H13V12H14V13H15V14H16V15H18V13H17V12H16V11H15V10H14V9H13V8H12V7H10V8H9V9H8V10H7V11H6" />
+        <title>gamepad-down-left</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 15V19H13V15H9Z" />
     </svg>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>plus-circle-fill</title>
-        <path d="M15 21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21V15H20V17H19V18H18V19H17V20H15ZM12 16V12H16V10H12V6H10V10H6V12H10V16Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>plus-circle</title>
-        <path d="M21 7V15H20V17H19V18H18V19H17V20H15V21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21M17 6V5H16V4H14V3H8V4H6V5H5V6H4V8H3V14H4V16H5V17H6V18H8V19H14V18H16V17H17V16H18V14H19V8H18V6H17M10 6H12V10H16V12H12V16H10V12H6V10H10V6Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>minus-circle-fill</title>
-        <path d="M15 21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21V15H20V17H19V18H18V19H17V20H15M16 12V10H6V12Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>minus-circle</title>
-        <path d="M21 7V15H20V17H19V18H18V19H17V20H15V21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21M17 6V5H16V4H14V3H8V4H6V5H5V6H4V8H3V14H4V16H5V17H6V18H8V19H14V18H16V17H17V16H18V14H19V8H18V6H17M16 10V12H6V10H16Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>trash</title>
-        <path d="M10 7V16H8V7H10M12 7H14V16H12V7M8 2H14V3H19V5H18V19H17V20H5V19H4V5H3V3H8V2M6 5V18H16V5H6Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>pencil</title>
-        <path d="M16 2H17V3H18V4H19V5H20V6H19V7H18V8H17V7H16V6H15V5H14V4H15V3H16M12 6H14V7H15V8H16V10H15V11H14V12H13V13H12V14H11V15H10V16H9V17H8V18H7V19H6V20H2V16H3V15H4V14H5V13H6V12H7V11H8V10H9V9H10V8H11V7H12" />
+        <title>gamepad-down-right</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 15V19H13V15H9Z" />
     </svg>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
         <title>gamepad-empty</title>
         <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V9H3V13H9V19H13V13H19V9H13V3Z" />
     </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <title>menu</title>
-        <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-left</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9Z" />
     </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>chevron-double-up</title><path d="M7.41,18.41L6,17L12,11L18,17L16.59,18.41L12,13.83L7.41,18.41M7.41,12.41L6,11L12,5L18,11L16.59,12.41L12,7.83L7.41,12.41Z" /></svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>chevron-double-down</title><path d="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,11.59L18,13L12,19L6,13L7.41,11.59L12,16.17L16.59,11.59Z" /></svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>pencil-outline</title><path d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z" /></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-right</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-up</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V7H13V3Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-up-left</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 3V7H13V3H9Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-up-right</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 3V7H13V3H9Z" />
+    </svg>
  */
 
 const ChecklistItem = (name, checked) => {
@@ -615,10 +608,6 @@ const UserInterface = (function () {
                 return;
             };
 
-            main.querySelectorAll('.to-do').forEach((item) => {
-                item.setAttribute('draggable', false);
-            });
-
             mainSortable.option('disabled', true);
 
             new Masonry( main, {
@@ -656,10 +645,6 @@ const UserInterface = (function () {
                 _renderEmptyMessage();
                 return;
             }
-
-            main.querySelectorAll('.to-do').forEach((item) => {
-                item.setAttribute('draggable', false);
-            });
 
             mainSortable.option('disabled', true);
 
@@ -778,7 +763,8 @@ const UserInterface = (function () {
 
         mainSortable = new Sortable( mainBox, {
             draggable: '.to-do',
-            direction: 'horizontal'
+            direction: 'horizontal',
+            handle: '.move-icon',
         });
     }
 
@@ -1041,6 +1027,31 @@ const UserInterface = (function () {
 
         const titleBox = document.createElement('div');
         titleBox.classList.add('title-box');
+
+        const moveIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        moveIcon.setAttribute('viewBox', '0 0 22 22');
+        moveIcon.classList.add('move-icon');
+        const moveIconTitle = document.createElement('title');
+        moveIconTitle.textContent = 'gamepad';
+        const moveIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+        const pathOptions = [
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 15H9V19H13V15Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 15V19H13V15H9Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 15V19H13V15H9Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V9H3V13H9V19H13V13H19V9H13V3Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V7H13V3Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 3V7H13V3H9Z",
+            "M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 3V7H13V3H9Z"
+        ];
+
+        moveIconPath.setAttribute('d', pathOptions[Math.floor(Math.random() * 9)]);
+        moveIcon.appendChild(moveIconTitle);
+        moveIcon.appendChild(moveIconPath);
+
+        titleBox.appendChild(moveIcon);
         titleBox.appendChild(title);
         titleBox.appendChild(checkBox);
 
@@ -1249,9 +1260,6 @@ const UserInterface = (function () {
         buttonsBox.appendChild(deleteBtn);
 
         container.classList.add('to-do');
-        if (!main.hasAttribute('data-project') && !main.hasAttribute('data-date')) {
-            container.setAttribute('draggable', true);
-        }
 
         container.addEventListener('dragstart', () => {
 
@@ -1519,10 +1527,6 @@ const UserInterface = (function () {
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
 
-        main.querySelectorAll('.to-do').forEach((item) => {
-            item.setAttribute('draggable', true);
-        });
-
         mainSortable.option('disabled', false);
 
         new Masonry( main, {
@@ -1547,10 +1551,6 @@ const UserInterface = (function () {
         }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
-
-        main.querySelectorAll('.to-do').forEach((item) => {
-            item.setAttribute('draggable', false);
-        });
 
         mainSortable.option('disabled', true);
 

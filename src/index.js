@@ -3,6 +3,49 @@ import Masonry from "masonry-layout";
 import Sortable from "sortablejs";
 import './style.css';
 
+/*
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>chevron-down</title>
+        <path d="M16 10H17V9H18V7H16V8H15V9H14V10H13V11H12V12H10V11H9V10H8V9H7V8H6V7H4V9H5V10H6V11H7V12H8V13H9V14H10V15H12V14H13V13H14V12H15V11H16" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>chevron-up</title>
+        <path d="M6 12H5V13H4V15H6V14H7V13H8V12H9V11H10V10H12V11H13V12H14V13H15V14H16V15H18V13H17V12H16V11H15V10H14V9H13V8H12V7H10V8H9V9H8V10H7V11H6" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>plus-circle-fill</title>
+        <path d="M15 21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21V15H20V17H19V18H18V19H17V20H15ZM12 16V12H16V10H12V6H10V10H6V12H10V16Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>plus-circle</title>
+        <path d="M21 7V15H20V17H19V18H18V19H17V20H15V21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21M17 6V5H16V4H14V3H8V4H6V5H5V6H4V8H3V14H4V16H5V17H6V18H8V19H14V18H16V17H17V16H18V14H19V8H18V6H17M10 6H12V10H16V12H12V16H10V12H6V10H10V6Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>minus-circle-fill</title>
+        <path d="M15 21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21V15H20V17H19V18H18V19H17V20H15M16 12V10H6V12Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>minus-circle</title>
+        <path d="M21 7V15H20V17H19V18H18V19H17V20H15V21H7V20H5V19H4V18H3V17H2V15H1V7H2V5H3V4H4V3H5V2H7V1H15V2H17V3H18V4H19V5H20V7H21M17 6V5H16V4H14V3H8V4H6V5H5V6H4V8H3V14H4V16H5V17H6V18H8V19H14V18H16V17H17V16H18V14H19V8H18V6H17M16 10V12H6V10H16Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>trash</title>
+        <path d="M10 7V16H8V7H10M12 7H14V16H12V7M8 2H14V3H19V5H18V19H17V20H5V19H4V5H3V3H8V2M6 5V18H16V5H6Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>pencil</title>
+        <path d="M16 2H17V3H18V4H19V5H20V6H19V7H18V8H17V7H16V6H15V5H14V4H15V3H16M12 6H14V7H15V8H16V10H15V11H14V12H13V13H12V14H11V15H10V16H9V17H8V18H7V19H6V20H2V16H3V15H4V14H5V13H6V12H7V11H8V10H9V9H10V8H11V7H12" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+        <title>gamepad-empty</title>
+        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V9H3V13H9V19H13V13H19V9H13V3Z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <title>menu</title>
+        <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
+    </svg>
+ */
+
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
         this.checked = this.checked ? false : true;
@@ -677,7 +720,8 @@ const UserInterface = (function () {
 
     const buildNewToDoButton = function () {
         const createBtn = document.createElement('button');
-        createBtn.textContent = 'create to-do';
+        createBtn.textContent = 'new to-do';
+        createBtn.classList.add('create-to-do');
 
         createBtn.addEventListener('click', () => {
             const createDialog = document.querySelector('dialog.create');
@@ -803,6 +847,7 @@ const UserInterface = (function () {
         editBtn.addEventListener('click', () => {
             check.replaceWith(editPopUp);
             editInput.defaultValue = checkText.textContent;
+            editInput.focus();
             new Masonry( main, {
                 itemSelector: '.to-do',
                 columnWidth: 250,
@@ -956,6 +1001,7 @@ const UserInterface = (function () {
 
         addChecklistItemBtn.addEventListener('click', () => {
             addChecklistItemBtn.replaceWith(addPopUp);
+            addInput.focus();
             
             new Masonry( main, {
                 itemSelector: '.to-do',
@@ -1127,6 +1173,7 @@ const UserInterface = (function () {
         const nameInput = document.createElement('input');
         nameInput.setAttribute('required', '');
         nameInput.setAttribute('type', 'text');
+        nameInput.setAttribute('maxlength', 20);
 
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = 'confirm';
@@ -1163,6 +1210,7 @@ const UserInterface = (function () {
             editPopUp.setAttribute('data-name', editBtn.parentElement.parentElement.getAttribute('data-name'));
             projectNode.replaceWith(editPopUp);
             nameInput.defaultValue = newProject.name;
+            nameInput.focus();
         })
 
         confirmBtn.addEventListener('click', (e) => {

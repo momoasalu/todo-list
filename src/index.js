@@ -3,45 +3,6 @@ import Masonry from "masonry-layout";
 import Sortable from "sortablejs";
 import './style.css';
 
-/*
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-down</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 15H9V19H13V15Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-down-left</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 15V19H13V15H9Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-down-right</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 15V19H13V15H9Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-empty</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V9H3V13H9V19H13V13H19V9H13V3Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-left</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-right</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-up</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M13 3H9V7H13V3Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-up-left</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M7 9H3V13H7V9M9 3V7H13V3H9Z" />
-    </svg>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
-        <title>gamepad-up-right</title>
-        <path d="M14 1V2H15V7H20V8H21V14H20V15H15V20H14V21H8V20H7V15H2V14H1V8H2V7H7V2H8V1H14M19 9H15V13H19V9M9 3V7H13V3H9Z" />
-    </svg>
- */
-
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
         this.checked = this.checked ? false : true;
@@ -557,6 +518,34 @@ const UserInterface = (function () {
         document.body.appendChild(dialog);
     }
 
+    const buildDeleteDialog =  function () {
+        const dialog = document.createElement('dialog');
+        dialog.classList.add('delete');
+
+        const message = document.createElement('p');
+
+        message.textContent = 'are you sure you want to delete this?';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'yes, delete';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'no, cancel';
+
+        deleteBtn.addEventListener('click', () => {
+            dialog.close('true')
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            dialog.close('');
+        });
+
+        dialog.appendChild(message);
+        dialog.appendChild(deleteBtn);
+        dialog.appendChild(cancelBtn);
+
+        document.body.appendChild(dialog);
+    }
+
     const buildHeader = function () {
         const header = document.querySelector('header');
 
@@ -566,7 +555,6 @@ const UserInterface = (function () {
         heading.textContent = 'to-do list!';
         header.appendChild(filler);
         header.appendChild(heading);
-
     }
 
     let mainSortable;
@@ -599,6 +587,8 @@ const UserInterface = (function () {
                     const toDoItem = createToDo(item);
                     const buttonsBox = toDoItem.querySelector('div.buttons-box')
                     toDoItem.removeChild(buttonsBox);
+                    const moveIcon = toDoItem.querySelector('svg.move-icon');
+                    moveIcon.remove();
                     main.appendChild(toDoItem);
                 }
             });
@@ -637,6 +627,8 @@ const UserInterface = (function () {
                     const toDoItem = createToDo(item);
                     const buttonsBox = toDoItem.querySelector('div.buttons-box');
                     toDoItem.removeChild(buttonsBox);
+                    const moveIcon = toDoItem.querySelector('svg.move-icon');
+                    moveIcon.remove();
                     main.appendChild(toDoItem);
                 };
             });
@@ -882,17 +874,24 @@ const UserInterface = (function () {
         })
 
         deleteBtn.addEventListener('click', () => {
-            toDo.deleteChecklistItem(checkListItem);
-            const container = check.parentElement;
-            check.remove();
-            _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+            const deleteDialog = document.querySelector('dialog.delete');
+            deleteDialog.showModal();
+
+            deleteDialog.addEventListener('click', () => {
+                if (deleteDialog.returnValue) {
+                    toDo.deleteChecklistItem(checkListItem);
+                    const container = check.parentElement;
+                    check.remove();
+                    _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
+                    new Masonry( main, {
+                        itemSelector: '.to-do',
+                        columnWidth: 250,
+                        horizontalOrder: true,
+                        gutter: 20,
+                        fitWidth: true,
+                    });
+                }
+                })
         });
 
         editBtn.addEventListener('click', () => {
@@ -1028,6 +1027,8 @@ const UserInterface = (function () {
         const titleBox = document.createElement('div');
         titleBox.classList.add('title-box');
 
+        const moveIconContainer = document.createElement('div');
+
         const moveIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         moveIcon.setAttribute('viewBox', '0 0 22 22');
         moveIcon.classList.add('move-icon');
@@ -1051,7 +1052,9 @@ const UserInterface = (function () {
         moveIcon.appendChild(moveIconTitle);
         moveIcon.appendChild(moveIconPath);
 
-        titleBox.appendChild(moveIcon);
+        moveIconContainer.appendChild(moveIcon);
+
+        titleBox.appendChild(moveIconContainer);
         titleBox.appendChild(title);
         titleBox.appendChild(checkBox);
 
@@ -1185,21 +1188,28 @@ const UserInterface = (function () {
         }) 
 
         deleteBtn.addEventListener('click', () => {
-            List.deleteTodo(toDo);
-            const toDoItem = deleteBtn.parentElement.parentElement
-            main.removeChild(toDoItem);
-            if (!main.hasChildNodes()) {
-                _renderEmptyMessage();
-                return;
-            }
-            const toDoItems = main.querySelectorAll('div.to-do');
-            _resetAttributes(Array.from(toDoItems), 'data-index');
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-            });
+            const deleteDialog = document.querySelector('dialog.delete');
+            deleteDialog.showModal();
+
+            deleteDialog.addEventListener('click', () => {
+                if (deleteDialog.returnValue) {
+                    List.deleteTodo(toDo);
+                    const toDoItem = deleteBtn.parentElement.parentElement;
+                    main.removeChild(toDoItem);
+                    if (!main.hasChildNodes()) {
+                        _renderEmptyMessage();
+                        return;
+                    }
+                    const toDoItems = main.querySelectorAll('div.to-do');
+                    _resetAttributes(Array.from(toDoItems), 'data-index');
+                    new Masonry( main, {
+                        itemSelector: '.to-do',
+                        columnWidth: 250,
+                        horizontalOrder: true,
+                        gutter: 20,
+                    });
+                }
+            }, {once: true});
         })
 
         editBtn.addEventListener('click', () => {
@@ -1278,7 +1288,6 @@ const UserInterface = (function () {
             _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
             const newIndex = container.getAttribute('data-index');
             List.reorderToDos(oldIndex, newIndex);
-            console.log(oldIndex, newIndex);
             main.querySelectorAll('div.to-do').forEach((item) => {
                 item.classList.remove('drop-zone');
             });
@@ -1462,37 +1471,47 @@ const UserInterface = (function () {
         deleteBtn.textContent = 'delete';
         
         deleteBtn.addEventListener('click', () => {
-            let toDoItems = main.querySelectorAll('.to-do');
-            let index = 0;
-            Array.from(toDoItems).forEach((item) => {
-                if (List.getToDos()[index].project === newProject) {
-                    main.removeChild(item);
-                }
-                index++;
-            });
-
-            _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
             const projectItem = deleteBtn.parentElement.parentElement;
-            projectItem.remove();
+            const deleteDialog = document.querySelector('dialog.delete');
 
-            List.deleteProject(newProject);
+            deleteDialog.showModal();
 
-            if (main.hasAttribute('data-project')) {
-                main.removeAttribute('data-project');
-                main.removeAttribute('data-date');
-                _retitleMain('home');
-                renderAll();
-            };
-
-            _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id')
-
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+            deleteDialog.addEventListener('close', () => {
+                if (deleteDialog.returnValue) {
+                    let toDoItems = main.querySelectorAll('.to-do');
+                    let index = 0;
+                    Array.from(toDoItems).forEach((item) => {
+                        if (List.getToDos()[index].project === newProject) {
+                            main.removeChild(item);
+                        }
+                        index++;
+                    });
+        
+                    _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
+                    projectItem.remove();
+        
+                    List.deleteProject(newProject);
+        
+                    if (main.hasAttribute('data-project')) {
+                        main.removeAttribute('data-project');
+                        main.removeAttribute('data-date');
+                        _retitleMain('home');
+                        renderAll();
+                    };
+        
+                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id')
+        
+                    new Masonry( main, {
+                        itemSelector: '.to-do',
+                        columnWidth: 250,
+                        horizontalOrder: true,
+                        gutter: 20,
+                        fitWidth: true,
+                    });
+    
+                }
+            }, {once: true});
+            
         });
 
         projectNode.setAttribute('draggable', 'true');
@@ -1543,6 +1562,8 @@ const UserInterface = (function () {
         main.textContent = '';
         List.getProjectItems(project).forEach((item) => {
             const toDo = createToDo(item);
+            const moveIcon = toDo.querySelector('svg.move-icon');
+            moveIcon.remove();
             main.appendChild(toDo);
         })
         if (!main.hasChildNodes()) {
@@ -1596,6 +1617,7 @@ const UserInterface = (function () {
     return {
         buildEditToDoDialog,
         buildNewToDoDialog,
+        buildDeleteDialog,
         buildHeader,
         buildSidebar,
         buildMain,
@@ -1618,6 +1640,7 @@ const DOMBuilder = (function () {
         UserInterface.buildSidebar();
         UserInterface.buildNewToDoDialog();
         UserInterface.buildEditToDoDialog();
+        UserInterface.buildDeleteDialog();
 
         window.addEventListener('click', (e) => {
             const popUpButtons = Array.from(document.querySelectorAll('button.pop-up'));

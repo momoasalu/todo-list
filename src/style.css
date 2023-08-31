@@ -124,13 +124,6 @@ div.to-do.past > div.checklist {
     outline: none;
 }
 
-div.to-do > div.title-box {
-    display: grid;
-    grid-auto-flow: column;
-    align-items: center;
-    justify-content: space-between;
-}
-
 div.title-box > div.checkbox {
     border-radius: 9px;
     width: 15px;
@@ -140,14 +133,18 @@ div.title-box > div.checkbox {
 
 div.title-box > h4 {
     font-size: 1.25rem;
-    max-width: 200px;
+    max-width: 175px;
 }
 
-div.title-box {
+div.to-do div.title-box {
     word-wrap: break-word;
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 5px;
+}
+
+div.title-box:first-child {
+    align-self: start;
 }
 
 div.to-do.checked > div.title-box > div.checkbox {

@@ -2,7 +2,7 @@ body {
     margin: 0;
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 275px 1fr;
+    grid-template-columns: 300px 1fr;
     grid-template-rows: 100px;
     --faded: rgb(97, 92, 92);
     --cream: rgb(250, 245, 238);
@@ -46,16 +46,30 @@ aside > div.projects {
     flex: 1;
     display: grid;
     align-content: start;
+    align-items: center;
     gap: 5px;
+    height: 32.5px;
 }
 
 .move-icon:hover {
     cursor: move;
 }
 
-div.projects > div.project {
+div.project-container {
+    display: grid;
+    gap: 5px;
+}
+
+div.projects div.project {
     border: 1px solid black;
     padding: 5px;
+    box-sizing: border-box;
+}
+
+div.projects div.project.ui-sortable-placeholder {
+    background-color: transparent;
+    border: none;
+    height: 32.5px;
 }
 
 main {
@@ -76,7 +90,6 @@ div.to-do {
     border: 1px solid black;
     display: grid;
     gap: 5px;
-    margin-bottom: 20px;
     outline-offset: 3px;
 }
 
@@ -446,10 +459,28 @@ dialog textarea {
     overflow: scroll;
 }
 
-.sortable-drag {
-    opacity: 0.3;
+.tooltip {
+    position: absolute;
+    width: 100px;
+    font-size: 0.6rem;
+    text-align: center;
+    line-height: 10px;
+    padding: 5px;
+    border: 0.5px solid rgba(0, 0, 0, 0.8);
+    outline: 0.5px solid rgba(0, 0, 0, 0.8);
+    outline-offset: -3px;
+    background-color: rgba(255, 255, 255, 0.8);
 }
 
-.sortable-ghost {
-    opacity: 0.3;
+.tooltip-text {
+    opacity: 1;
+    font-family: sans-serif;
+}
+
+.packery-drop-placeholder {
+    border: 1px black dashed;
+}
+
+div.to-do.is-dragging {
+    border: 5px solid rebeccapurple;
 }

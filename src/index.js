@@ -1,6 +1,6 @@
 import { addDays, addWeeks, format, formatISO, isAfter, isToday, isWithinInterval, parseJSON } from "date-fns";
-import Sortable from "sortable-axis";
 import Draggabilly from "draggabilly";
+import { Sortable } from "agnostic-draggable";
 import './style.css';
 var Packery = require('packery');
 
@@ -80,9 +80,17 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         StorageController.updateStorage();
     }
 
-    const reorderCheckItems = function (oldIndex, newIndex) {
-        const [checkItem] = this.checklist.splice(oldIndex, 1)
-        this.checklist.splice(newIndex, 0, checkItem);
+    const reorderCheckItems = function (newIndexes) {
+        const checklistCopy = checklist.map((a) => a);
+        this.checklist.sort((a, b) => {
+            const indexA = checklistCopy.indexOf(a);
+            const indexB = checklistCopy.indexOf(b);
+
+            const indexOfIndexA = newIndexes.indexOf(indexA);
+            const indexOfIndexB = newIndexes.indexOf(indexB);
+
+            return indexOfIndexA < indexOfIndexB ? -1 : 1;
+        })
         StorageController.updateStorage();
     }
 
@@ -394,6 +402,10 @@ const UserInterface = (function () {
                     toDoNode.setAttribute('data-index', List.getProjectItems(project).length - 1);
                     main.appendChild(toDoNode);
                     mainLayout.appended(toDoNode);
+                    const draggie = new Draggabilly(toDoNode, {
+                        handle: '.move-icon',
+                    })
+                    mainLayout.bindDraggabillyEvents(draggie);
                 } else if (main.hasAttribute('data-date')) {
                     const newToDo = List.createToDo(title, description, dueDate, priority);
                     if (main.getAttribute('data-date') === 'upcoming') {
@@ -407,6 +419,10 @@ const UserInterface = (function () {
                             toDoNode.setAttribute('data-index', main.querySelectorAll('.to-do').length);
                             main.appendChild(toDoNode);
                             mainLayout.appended(toDoNode);
+                            const draggie = new Draggabilly(toDoNode, {
+                                handle: '.move-icon',
+                            })
+                            mainLayout.bindDraggabillyEvents(draggie);
                         }
                     } else if (main.getAttribute('data-date') === 'today') {
                         if (isToday(newToDo.dueDate)) {
@@ -416,6 +432,10 @@ const UserInterface = (function () {
                             toDoNode.setAttribute('data-index', main.querySelectorAll('.to-do').length);
                             main.appendChild(toDoNode);
                             mainLayout.appended(toDoNode);
+                            const draggie = new Draggabilly(toDoNode, {
+                                handle: '.move-icon',
+                            })
+                            mainLayout.bindDraggabillyEvents(draggie);
                         }
                     }
                 } else {
@@ -424,6 +444,10 @@ const UserInterface = (function () {
                     toDoNode.setAttribute('data-index', List.getToDos().length - 1);
                     main.appendChild(toDoNode);
                     mainLayout.appended(toDoNode);
+                    const draggie = new Draggabilly(toDoNode, {
+                        handle: '.move-icon',
+                    })
+                    mainLayout.bindDraggabillyEvents(draggie);
                 }
 
                 if (main.querySelector('.empty-message')) {
@@ -602,8 +626,6 @@ const UserInterface = (function () {
                     const toDoItem = createToDo(item);
                     const editBtn = toDoItem.querySelector('div.buttons-box > button.edit')
                     editBtn.remove();
-                    const moveIcon = toDoItem.querySelector('svg.move-icon');
-                    moveIcon.remove();
                     toDoItem.setAttribute('data-index', index)
                     main.appendChild(toDoItem);
                     index++;
@@ -623,7 +645,7 @@ const UserInterface = (function () {
 
             main.querySelectorAll('.to-do').forEach((item) => {
                 const draggie = new Draggabilly(item, {
-                    containment: main
+                    handle: '.move-icon',
                 })
                 mainLayout.bindDraggabillyEvents(draggie);
             })
@@ -655,8 +677,6 @@ const UserInterface = (function () {
                     const toDoItem = createToDo(item);
                     const editBtn = toDoItem.querySelector('div.buttons-box > button.edit')
                     editBtn.remove();
-                    const moveIcon = toDoItem.querySelector('svg.move-icon');
-                    moveIcon.remove();
                     toDoItem.setAttribute('data-index', index)
                     main.appendChild(toDoItem);
                     index++;
@@ -676,7 +696,7 @@ const UserInterface = (function () {
 
             main.querySelectorAll('.to-do').forEach((item) => {
                 const draggie = new Draggabilly(item, {
-                    containment: main
+                    handle: '.move-icon',
                 })
                 mainLayout.bindDraggabillyEvents(draggie);
             })
@@ -704,11 +724,14 @@ const UserInterface = (function () {
         projectsDiv.classList.add('projects');
         const header = document.createElement('h2');
         header.textContent = 'projects';
+        const projectContainer = document.createElement('div');
+        projectContainer.classList.add('project-container');
         const createBtn = document.createElement('button');
         createBtn.textContent = '+';
         createBtn.classList.add('create-project');
 
         projectsDiv.appendChild(header);
+        projectsDiv.appendChild(projectContainer);
         projectsDiv.appendChild(createBtn);
 
         const createPopUp = document.createElement('div');
@@ -738,21 +761,39 @@ const UserInterface = (function () {
         confirmBtn.addEventListener('click', (e) => {
             const projectNames = List.getProjects().map((item) => item.name);
             if (projectNames.includes(projectInput.value)) {
-                projectInput.setCustomValidity('project name must be unique');
+                e.preventDefault();
+                console.log('project must be unique!');
             };
             if (projectInput.checkValidity() && !projectNames.includes(projectInput.value)) {
                 e.preventDefault();
-                if (document.querySelector('.create-project')) {
-                    projectsDiv.insertBefore(createProject(projectInput.value), document.querySelector('.create-project'));
-                } else {
-                    projectsDiv.insertBefore(createProject(projectInput.value), document.querySelector('.create-pop-up'));
-                }
-                _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id');
+                projectContainer.appendChild(createProject(projectInput.value));
+                _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).filter(item => !item.classList.contains('ui-sortable-placeholder')), 'data-id');
                 createForm.reset();
                 createPopUp.replaceWith(createBtn);
-            };
 
-            StorageController.updateStorage();
+                const sort = new Sortable(projectContainer, {
+                    items: 'div.project',
+                    axis: 'y',
+                    handle: '.move-icon',
+                    containment: 'div.projects',
+                    forcePlaceholderSize: true,
+                    opacity: 0.5,
+                });
+
+                sort.on('sort:start', () => {
+                    console.log('hello!');
+                });
+        
+                sort.on('sortable:update', () => {
+                    console.log('change');
+                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).filter(item => !item.classList.contains('ui-sortable-placeholder'), 'data-id'));
+                    const projects = Array.from(projectContainer.querySelectorAll('div.project'))
+                    const projectNames = projects.filter(item => !item.classList.contains('ui-sortable-placeholder')).map(item => item.querySelector('div.name').textContent);
+                    List.reorderProjects(projectNames);
+                });
+                StorageController.updateStorage();
+
+            };
         });
 
         cancelBtn.addEventListener('click', () => {
@@ -760,17 +801,26 @@ const UserInterface = (function () {
             createPopUp.replaceWith(createBtn);
         });
 
-        Sortable.create(projectsDiv, {
-            draggable: '.project',
+        const sort = new Sortable(projectContainer, {
+            items: 'div.project',
+            axis: 'y',
             handle: '.move-icon',
-            fallbackAxis: 'y',
-            forceFallback: true,
-            onEnd: function () {
-                _resetAttributes(Array.from(projectsDiv.querySelectorAll('.project')), 'data-id');
-                const projects = Array.from(document.querySelector('aside').querySelectorAll('.project'));
-                const projectNames = projects.map((item) => item.querySelector('.name').textContent);
-                List.reorderProjects(projectNames);
-            }
+            containment: 'div.projects',
+            forcePlaceholderSize: true,
+            opacity: 0.5,
+
+        });
+
+        sort.on('sort:start', () => {
+            console.log('hello!');
+        });
+
+        sort.on('sortable:update', () => {
+            console.log('change');
+            _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).filter(item => !item.classList.contains('ui-sortable-placeholder')), 'data-id');
+            const projects = Array.from(projectContainer.querySelectorAll('div.project'))
+            const projectNames = projects.filter(item => !item.classList.contains('ui-sortable-placeholder')).map(item => item.querySelector('div.name').textContent);
+            List.reorderProjects(projectNames);
         });
 
         return projectsDiv;
@@ -1013,17 +1063,98 @@ const UserInterface = (function () {
             container.appendChild(createCheckListItem(item, toDo));
         });
 
-        Sortable.create(container, {
-            draggable: '.check-item',
-            fallbackAxis: 'y',
-            forceFallback: true,
-            onEnd: function (evt) {
-                const oldIndex = evt.item.getAttribute('data-order');
-                _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
-                const newIndex = evt.item.getAttribute('data-order');
-                toDo.reorderCheckItems(oldIndex, newIndex);
+        const addChecklistItemBtn = document.createElement('button');
+        addChecklistItemBtn.classList.add('add-checklist');
+        addChecklistItemBtn.textContent = '+';
+
+        const addPopUp = document.createElement('div');
+        const addForm = document.createElement('form');
+        const addInput = document.createElement('input');
+        addInput.setAttribute('type', 'text');
+        addInput.setAttribute('required', '');
+
+        const addConfirmBtn = document.createElement('button');
+        addConfirmBtn.textContent = 'confirm';
+
+        const addCancelBtn = document.createElement('button');
+        addCancelBtn.textContent = 'cancel';
+
+        addForm.appendChild(addInput);
+        addForm.appendChild(addConfirmBtn);
+        addForm.appendChild(addCancelBtn);
+        addPopUp.appendChild(addForm);
+
+        addChecklistItemBtn.addEventListener('click', () => {
+            addChecklistItemBtn.replaceWith(addPopUp);
+            mainLayout.shiftLayout();
+            addInput.focus();
+        });
+
+        addConfirmBtn.addEventListener('click', (e) => {
+            if (addInput.checkValidity()) {
+                e.preventDefault();
+                const checkListItem = toDo.addChecklistItem(addInput.value);
+                container.insertBefore(createCheckListItem(checkListItem, toDo), addPopUp);
+                addPopUp.replaceWith(addChecklistItemBtn);
+
+                const sort = new Sortable(container, {
+                    items: 'div.check-item',
+                    axis: 'y',
+                    containment: 'parent',
+                    forcePlaceholderSize: true,
+                    opacity: 0.5,
+                    cursor: 'move',
+                });
+        
+                sort.on('sort:start', () => {
+                    console.log('hello!');
+                });
+        
+                sort.on('sortable:update', () => {
+                    console.log('change');
+                    const checkItems = Array.from(container.querySelectorAll('div.check-item'))
+                    const checkIndexes = checkItems.filter(item => !item.classList.contains('ui-sortable-placeholder')).map(item => +item.getAttribute('data-order'));
+                    console.log(checkIndexes);
+                    toDo.reorderCheckItems(checkIndexes);
+                    _resetAttributes(Array.from(document.querySelector('div.checklist').querySelectorAll('div.check-item')).filter(item => !item.classList.contains('ui-sortable-placeholder')), 'data-order');
+                });
+
+                addForm.reset();
+                mainLayout.shiftLayout();
             }
+        });
+
+        addCancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addForm.reset();
+            addPopUp.replaceWith(addChecklistItemBtn);
+            mainLayout.shiftLayout();
         })
+
+        container.appendChild(addChecklistItemBtn);
+
+
+        const sort = new Sortable(container, {
+            items: 'div.check-item',
+            axis: 'y',
+            containment: 'parent',
+            forcePlaceholderSize: true,
+            opacity: 0.5,
+            cursor: 'move',
+        });
+
+        sort.on('sort:start', () => {
+            console.log('hello!');
+        });
+
+        sort.on('sortable:update', () => {
+            console.log('change');
+            const checkItems = Array.from(container.querySelectorAll('div.check-item'))
+            const checkIndexes = checkItems.filter(item => !item.classList.contains('ui-sortable-placeholder')).map(item => +item.getAttribute('data-order'));
+            console.log(checkIndexes);
+            toDo.reorderCheckItems(checkIndexes);
+            _resetAttributes(Array.from(document.querySelector('div.checklist').querySelectorAll('div.check-item')).filter(item => !item.classList.contains('ui-sortable-placeholder')), 'data-order');
+        });
 
         return container;
     }
@@ -1052,6 +1183,7 @@ const UserInterface = (function () {
         titleBox.classList.add('title-box');
 
         const moveIconContainer = document.createElement('div');
+        moveIconContainer.style.position = 'relative';
 
         const moveIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         moveIcon.setAttribute('viewBox', '0 0 22 22');
@@ -1097,26 +1229,45 @@ const UserInterface = (function () {
         }
         container.setAttribute('data-priority', toDo.priority);
         dueDate.classList.add('due-date');
+
         const checklist = createChecklist(toDo);
 
-        const addChecklistItemBtn = document.createElement('button');
-        addChecklistItemBtn.classList.add('add-checklist');
-        addChecklistItemBtn.textContent = '+';
+        const tooltip = document.createElement('div'); 
+        const tooltipText = document.createElement('span');
+        tooltipText.classList.add('tooltip-text');
+        tooltipText.textContent = main.hasAttribute('data-project') || main.hasAttribute('data-date') ? 'changes made to the layout on this page will not be saved' : 'changes made to the layout on this page will be saved';
+        tooltip.style.display = 'none';
+        tooltipText.style.color = 'black';
+        tooltip.classList.add('tooltip');
+        tooltip.appendChild(tooltipText);
 
-        const addPopUp = document.createElement('div');
-        const addForm = document.createElement('form');
-        const addInput = document.createElement('input');
-        addInput.setAttribute('type', 'text');
-        addInput.setAttribute('required', '');
-        const addConfirmBtn = document.createElement('button');
-        addConfirmBtn.textContent = 'confirm'
-        const addCancelBtn = document.createElement('button');
-        addCancelBtn.textContent = 'cancel';
+        moveIconContainer.appendChild(tooltip);
+        let timeout;
 
-        addForm.appendChild(addInput);
-        addForm.appendChild(addConfirmBtn);
-        addForm.appendChild(addCancelBtn);
-        addPopUp.appendChild(addForm);
+        function showTooltip () {
+            tooltip.style.display = 'block';
+
+            tooltip.style.left = '-46px';
+            tooltip.style.bottom = '-43px';
+
+            timeout = undefined;
+        }
+
+        function hideTooltip () {
+            tooltip.style.display = 'none';
+            if (timeout) {
+                clearTimeout(timeout);
+                timeout = undefined;
+            }
+
+        }
+
+        moveIcon.addEventListener('mouseover', () => {
+            timeout = setTimeout(showTooltip, 1000);
+        })
+
+        moveIcon.addEventListener('click', hideTooltip)
+        moveIcon.addEventListener('mouseout', hideTooltip)
 
         const deleteBtn = document.createElement('button');
         deleteBtn.classList.add('delete');
@@ -1147,33 +1298,6 @@ const UserInterface = (function () {
         editBtnIcon.appendChild(editBtnIconPath);
 
         editBtn.appendChild(editBtnIcon);
-
-        checklist.appendChild(addChecklistItemBtn);
-
-        addChecklistItemBtn.addEventListener('click', () => {
-            addChecklistItemBtn.replaceWith(addPopUp);
-            mainLayout.shiftLayout();
-            addInput.focus();
-        });
-
-        addConfirmBtn.addEventListener('click', (e) => {
-            if (addInput.checkValidity()) {
-                e.preventDefault();
-                const checkListItem = toDo.addChecklistItem(addInput.value);
-                checklist.insertBefore(createCheckListItem(checkListItem, toDo), addPopUp);
-                addPopUp.replaceWith(addChecklistItemBtn);
-
-                addForm.reset();
-                mainLayout.shiftLayout();
-            }
-        });
-
-        addCancelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            addForm.reset();
-            addPopUp.replaceWith(addChecklistItemBtn);
-            mainLayout.shiftLayout();
-        })
 
         checkBox.addEventListener('click', () => {
             toDo.toggleComplete();
@@ -1334,7 +1458,7 @@ const UserInterface = (function () {
         const nameInput = document.createElement('input');
         nameInput.setAttribute('required', '');
         nameInput.setAttribute('type', 'text');
-        nameInput.setAttribute('maxlength', 20);
+        nameInput.setAttribute('maxlength', 14);
 
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = 'confirm';
@@ -1474,9 +1598,9 @@ const UserInterface = (function () {
                         renderAll();
                     }
 
-                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id');
-
                     projectItem.remove();
+                    
+                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).filter(item => !item.classList.contains('ui-sortable-placeholder')), 'data-id');
 
                 }
             }, {once: true});
@@ -1493,28 +1617,29 @@ const UserInterface = (function () {
             const newNode = createToDo(item);
             main.appendChild(newNode);
         })
-        if (!main.hasChildNodes()){
-            _renderEmptyMessage();
-            return;
-        }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
 
         mainLayout = new Packery(main, {
             itemSelector: '.to-do',
             columnWidth: 250,
-            gutter: 20
+            gutter: 20,
         })
 
         main.querySelectorAll('.to-do').forEach((item) => {
             const draggie = new Draggabilly(item, {
-                containment: main
+                handle: '.move-icon',
             })
             mainLayout.bindDraggabillyEvents(draggie);
         })
 
         mainLayout.on('dragItemPositioned', reorderAll );
         mainLayout.on('removeComplete', reorderAll );
+
+        if (!main.hasChildNodes()){
+            _renderEmptyMessage();
+            return;
+        }
     }
 
     const renderProjectItems = function (project) {
@@ -1522,14 +1647,8 @@ const UserInterface = (function () {
         main.textContent = '';
         List.getProjectItems(project).forEach((item) => {
             const toDo = createToDo(item);
-            const moveIcon = toDo.querySelector('svg.move-icon');
-            moveIcon.remove();
             main.appendChild(toDo);
         })
-        if (!main.hasChildNodes()) {
-            _renderEmptyMessage();
-            return;
-        }
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
 
@@ -1538,22 +1657,26 @@ const UserInterface = (function () {
         mainLayout = new Packery(main, {
             itemSelector: '.to-do',
             columnWidth: 250,
-            gutter: 20
+            gutter: 20,
         })
 
         main.querySelectorAll('.to-do').forEach((item) => {
             const draggie = new Draggabilly(item, {
-                containment: main
+                handle: '.move-icon',
             })
             mainLayout.bindDraggabillyEvents(draggie);
         })
 
         mainLayout.on('removeComplete', () => {
             if (main.hasAttribute('data-project') || main.hasAttribute('data-date')) {
-                console.log(main.querySelectorAll('.to-do'));
                 _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
             }
         });
+
+        if (!main.hasChildNodes()) {
+            _renderEmptyMessage();
+            return;
+        }
     }
 
     function syncDataIndexes() {
@@ -1567,11 +1690,8 @@ const UserInterface = (function () {
     function reorderAll () {
         const main = document.querySelector('#main');
         if (!main.hasAttribute('data-project') && !main.hasAttribute('data-date')) {
-            console.log(mainLayout.getItemElements());
             const newIndexes = mainLayout.getItemElements().map((item) => +item.getAttribute('data-index'));
-            console.log(newIndexes);
             List.reorderAll(newIndexes);
-            console.log(List.getToDos());
             syncDataIndexes();
             StorageController.updateStorage();
         }
@@ -1712,11 +1832,10 @@ const StorageController = (function() {
         if (localStorage.getItem('projects') && localStorage.getItem('toDos')) {
             const JSONprojects = JSON.parse(localStorage.getItem('projects'));
 
-            const projectsDiv = document.querySelector('div.projects')
-            const createProjectBtn = document.querySelector('button.create-project');
+            const projectContainer = document.querySelector('div.project-container');
 
             JSONprojects.forEach((item) => {
-                projectsDiv.insertBefore(UserInterface.createProject(item), createProjectBtn)
+                projectContainer.appendChild(UserInterface.createProject(item));
             });
 
             const JSONtoDos = JSON.parse(localStorage.getItem('toDos'));

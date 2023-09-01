@@ -69,10 +69,6 @@ main > h1 {
     align-self: center;
 }
 
-main > div#main {
-    align-self: center;
-}
-
 div.to-do {
     box-sizing: border-box;
     width: 250px;
@@ -82,6 +78,14 @@ div.to-do {
     gap: 5px;
     margin-bottom: 20px;
     outline-offset: 3px;
+}
+
+#main[data-project] div.to-do {
+    margin-bottom: 0;
+}
+
+.empty-message {
+    text-align: center;
 }
 
 .to-do[data-priority='high'] {
@@ -143,6 +147,11 @@ div.to-do div.title-box {
     gap: 5px;
 }
 
+div.to-do > p {
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
 div.title-box:first-child {
     align-self: start;
 }
@@ -173,14 +182,38 @@ div.to-do.checked > div.title-box > h4{
 }
 
 div.to-do.past div.check-item.checked > div.checklist-checkbox {
-    background-color: gray;
+    background-color: var(--faded);
+}
+
+div.to-do.past button {
+    color: var(--faded);
+}
+
+div.project div {
+    height: 15px;
+}
+
+div.project div.name {
+    display: flex;
+    align-items: center;
+}
+
+div.project svg.move-icon {
+    width: 15px;
+    height: 15px;
+}
+
+div.project svg.move-icon:hover {
+    color: rgb(187, 0, 0);
 }
 
 div.project {
     display: grid;
     grid-auto-flow: column;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
+    gap: 5px;
     justify-content: space-between;
+    align-items: center;
     position: relative;
 }
 
@@ -259,12 +292,13 @@ div.buttons-box {
 }
 
 div.projects div.pop-up {
-    right: -15px;
+    right: -17px;
     top: -48px;
+    height: 45px;
 }
 
 div.checklist div.pop-up {
-    right: -20px;
+    right: -22px;
     top: -53px;
 }
 
@@ -313,12 +347,12 @@ div.pop-up > button:hover {
     margin-top: -5px;
 }
 
-.buttons-box button:last-child:hover {
-    color: gray;
-}
-
 .buttons-box button:first-child:hover {
     color: rgb(111, 60, 28);
+}
+
+.buttons-box button:last-child:hover {
+    color: gray;
 }
 
 div.projects form,
@@ -410,4 +444,12 @@ dialog div.close > button {
 dialog textarea {
     resize: none;
     overflow: scroll;
+}
+
+.sortable-drag {
+    opacity: 0.3;
+}
+
+.sortable-ghost {
+    opacity: 0.3;
 }

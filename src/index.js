@@ -1,7 +1,8 @@
 import { addDays, addWeeks, format, formatISO, isAfter, isToday, isWithinInterval, parseJSON } from "date-fns";
-import Masonry from "masonry-layout";
-import Sortable from "sortablejs";
+import Sortable from "sortable-axis";
+import Draggabilly from "draggabilly";
 import './style.css';
+var Packery = require('packery');
 
 const ChecklistItem = (name, checked) => {
     const toggleComplete = function () {
@@ -79,6 +80,12 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         StorageController.updateStorage();
     }
 
+    const reorderCheckItems = function (oldIndex, newIndex) {
+        const [checkItem] = this.checklist.splice(oldIndex, 1)
+        this.checklist.splice(newIndex, 0, checkItem);
+        StorageController.updateStorage();
+    }
+
     return {
         title, 
         description, 
@@ -92,6 +99,7 @@ const ToDo = (title, description, dueDate, priority, project, completed, checkli
         toggleComplete,
         edit,
         setProject,
+        reorderCheckItems
     }
 }
 
@@ -195,6 +203,19 @@ const List = (function () {
         StorageController.updateStorage();
     }
 
+    const reorderAll = function (newIndexes) {
+        const toDosCopy = toDos.map((a) => a);
+        toDos.sort((a, b) => {
+            const indexA = toDosCopy.indexOf(a);
+            const indexB = toDosCopy.indexOf(b);
+
+            const indexOfIndexA = newIndexes.indexOf(indexA);
+            const indexOfIndexB = newIndexes.indexOf(indexB);
+
+            return indexOfIndexA < indexOfIndexB ? -1 : 1;
+        })
+    }
+
     return {
         getToDos,
         getProjects,
@@ -205,11 +226,14 @@ const List = (function () {
         getProjectItems,
         addToDoToProject,
         reorderProjects,
-        reorderToDos
+        reorderToDos,
+        reorderAll,
     }
 })();
 
 const UserInterface = (function () {
+    let mainLayout;
+
     const _retitleMain = function (newTitle) {
         const title = document.querySelector('.title');
         title.textContent = newTitle;
@@ -369,6 +393,7 @@ const UserInterface = (function () {
                     const toDoNode = createToDo(newToDo)
                     toDoNode.setAttribute('data-index', List.getProjectItems(project).length - 1);
                     main.appendChild(toDoNode);
+                    mainLayout.appended(toDoNode);
                 } else if (main.hasAttribute('data-date')) {
                     const newToDo = List.createToDo(title, description, dueDate, priority);
                     if (main.getAttribute('data-date') === 'upcoming') {
@@ -379,14 +404,18 @@ const UserInterface = (function () {
                             const toDoNode = createToDo(newToDo);
                             toDoNode.querySelector('button.delete').remove();
                             toDoNode.querySelector('button.edit').remove();
+                            toDoNode.setAttribute('data-index', main.querySelectorAll('.to-do').length);
                             main.appendChild(toDoNode);
+                            mainLayout.appended(toDoNode);
                         }
                     } else if (main.getAttribute('data-date') === 'today') {
                         if (isToday(newToDo.dueDate)) {
                             const toDoNode = createToDo(newToDo);
                             toDoNode.querySelector('button.delete').remove();
                             toDoNode.querySelector('button.edit').remove();
+                            toDoNode.setAttribute('data-index', main.querySelectorAll('.to-do').length);
                             main.appendChild(toDoNode);
+                            mainLayout.appended(toDoNode);
                         }
                     }
                 } else {
@@ -394,6 +423,7 @@ const UserInterface = (function () {
                     const toDoNode = createToDo(newToDo)
                     toDoNode.setAttribute('data-index', List.getToDos().length - 1);
                     main.appendChild(toDoNode);
+                    mainLayout.appended(toDoNode);
                 }
 
                 if (main.querySelector('.empty-message')) {
@@ -405,14 +435,6 @@ const UserInterface = (function () {
 
                 form.reset();
                 dialog.close();
-
-                new Masonry( main, {
-                    itemSelector: '.to-do',
-                    columnWidth: 250,
-                    horizontalOrder: true,
-                    gutter: 20,
-                    fitWidth: true,
-                });
             }
         });
 
@@ -498,13 +520,7 @@ const UserInterface = (function () {
                 dialog.removeAttribute('data-index');
                 form.reset();
                 dialog.close();
-                new Masonry( main, {
-                    itemSelector: '.to-do',
-                    columnWidth: 250,
-                    horizontalOrder: true,
-                    gutter: 20,
-                    fitWidth: true,
-                });
+                mainLayout.shiftLayout();
             }
         });
 
@@ -557,8 +573,6 @@ const UserInterface = (function () {
         header.appendChild(heading);
     }
 
-    let mainSortable;
-
     const buildSidebar = function () {
         const main = document.querySelector('#main');
 
@@ -582,14 +596,17 @@ const UserInterface = (function () {
             main.setAttribute('data-date', 'today');
             main.textContent = '';
 
+            let index = 0;
             List.getToDos().forEach((item) => {
                 if (isToday(item.dueDate)) {
                     const toDoItem = createToDo(item);
-                    const buttonsBox = toDoItem.querySelector('div.buttons-box')
-                    toDoItem.removeChild(buttonsBox);
+                    const editBtn = toDoItem.querySelector('div.buttons-box > button.edit')
+                    editBtn.remove();
                     const moveIcon = toDoItem.querySelector('svg.move-icon');
                     moveIcon.remove();
+                    toDoItem.setAttribute('data-index', index)
                     main.appendChild(toDoItem);
+                    index++;
                 }
             });
 
@@ -598,16 +615,26 @@ const UserInterface = (function () {
                 return;
             };
 
-            mainSortable.option('disabled', true);
-
-            new Masonry( main, {
+            mainLayout = new Packery(main, {
                 itemSelector: '.to-do',
                 columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+                gutter: 20
+            })
 
+            main.querySelectorAll('.to-do').forEach((item) => {
+                const draggie = new Draggabilly(item, {
+                    containment: main
+                })
+                mainLayout.bindDraggabillyEvents(draggie);
+            })
+    
+            
+            mainLayout.on('removeComplete', () => {
+                if (main.hasAttribute('data-project') || main.hasAttribute('data-date')) {
+                    console.log(main.querySelectorAll('.to-do'));
+                    _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
+                }
+            });
         })
 
         const upcoming = document.createElement('h2');
@@ -619,17 +646,20 @@ const UserInterface = (function () {
             main.setAttribute('data-date', 'upcoming');
             main.textContent = '';
 
+            let index = 0;
             List.getToDos().forEach((item) => {
                 if (isWithinInterval(item.dueDate, {
                     start: addDays(new Date().setHours(0, 0, 0, 0), 1),
                     end: addWeeks(new Date().setHours(23, 59, 59, 99), 1),
                 })) {
                     const toDoItem = createToDo(item);
-                    const buttonsBox = toDoItem.querySelector('div.buttons-box');
-                    toDoItem.removeChild(buttonsBox);
+                    const editBtn = toDoItem.querySelector('div.buttons-box > button.edit')
+                    editBtn.remove();
                     const moveIcon = toDoItem.querySelector('svg.move-icon');
                     moveIcon.remove();
+                    toDoItem.setAttribute('data-index', index)
                     main.appendChild(toDoItem);
+                    index++;
                 };
             });
 
@@ -638,14 +668,24 @@ const UserInterface = (function () {
                 return;
             }
 
-            mainSortable.option('disabled', true);
-
-            new Masonry( main, {
+            mainLayout = new Packery(main, {
                 itemSelector: '.to-do',
                 columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
+                gutter: 20
+            })
+
+            main.querySelectorAll('.to-do').forEach((item) => {
+                const draggie = new Draggabilly(item, {
+                    containment: main
+                })
+                mainLayout.bindDraggabillyEvents(draggie);
+            })
+
+            mainLayout.on('removeComplete', () => {
+                if (main.hasAttribute('data-project') || main.hasAttribute('data-date')) {
+                    console.log(main.querySelectorAll('.to-do'));
+                    _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
+                }
             });
         });
 
@@ -665,7 +705,7 @@ const UserInterface = (function () {
         const header = document.createElement('h2');
         header.textContent = 'projects';
         const createBtn = document.createElement('button');
-        createBtn.textContent = 'new project';
+        createBtn.textContent = '+';
         createBtn.classList.add('create-project');
 
         projectsDiv.appendChild(header);
@@ -722,6 +762,15 @@ const UserInterface = (function () {
 
         Sortable.create(projectsDiv, {
             draggable: '.project',
+            handle: '.move-icon',
+            fallbackAxis: 'y',
+            forceFallback: true,
+            onEnd: function () {
+                _resetAttributes(Array.from(projectsDiv.querySelectorAll('.project')), 'data-id');
+                const projects = Array.from(document.querySelector('aside').querySelectorAll('.project'));
+                const projectNames = projects.map((item) => item.querySelector('.name').textContent);
+                List.reorderProjects(projectNames);
+            }
         });
 
         return projectsDiv;
@@ -752,12 +801,6 @@ const UserInterface = (function () {
 
         main.appendChild(title);
         main.appendChild(mainBox);
-
-        mainSortable = new Sortable( mainBox, {
-            draggable: '.to-do',
-            direction: 'horizontal',
-            handle: '.move-icon',
-        });
     }
 
     const _resetAttributes = function (array, attr) {
@@ -883,13 +926,7 @@ const UserInterface = (function () {
                     const container = check.parentElement;
                     check.remove();
                     _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
-                    new Masonry( main, {
-                        itemSelector: '.to-do',
-                        columnWidth: 250,
-                        horizontalOrder: true,
-                        gutter: 20,
-                        fitWidth: true,
-                    });
+                    mainLayout.shiftLayout();
                 }
                 })
         });
@@ -897,14 +934,8 @@ const UserInterface = (function () {
         editBtn.addEventListener('click', () => {
             check.replaceWith(editPopUp);
             editInput.defaultValue = checkText.textContent;
+            mainLayout.shiftLayout()
             editInput.focus();
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
         });
 
         editConfirmBtn.addEventListener('click', (e) => {
@@ -914,14 +945,8 @@ const UserInterface = (function () {
                 checkText.textContent = editInput.value;
                 editPopUp.replaceWith(check);
                 check.removeChild(popUp);
+                mainLayout.shiftLayout()
             }
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
         });
 
         editCancelBtn.addEventListener('click', (e) => {
@@ -929,13 +954,7 @@ const UserInterface = (function () {
             editForm.reset();
             editPopUp.replaceWith(check);
             check.removeChild(popUp);
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+            mainLayout.shiftLayout()
         });
 
         check.appendChild(checkBox);
@@ -965,8 +984,8 @@ const UserInterface = (function () {
         miniIconTitle.textContent = 'chevron-double-up';
         miniIconPath.setAttribute('d', 'M7.41,18.41L6,17L12,11L18,17L16.59,18.41L12,13.83L7.41,18.41M7.41,12.41L6,11L12,5L18,11L16.59,12.41L12,7.83L7.41,12.41Z');
 
-        expandIcon.appendChild(miniIconTitle);
-        expandIcon.appendChild(miniIconPath);
+        expandIcon.appendChild(expandIconTitle);
+        expandIcon.appendChild(expandIconPath);
 
         expander.appendChild(expandIcon);
 
@@ -983,23 +1002,28 @@ const UserInterface = (function () {
                 expandIcon.appendChild(expandIconTitle);
                 expandIcon.appendChild(expandIconPath);
             }
-
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+            mainLayout.shiftLayout();
         })
 
         container.appendChild(expander);
         container.classList.add('checklist');
-        container.classList.add('expanded');
+        container.classList.add('minimized');
 
         toDo.checklist.forEach((item) => {
             container.appendChild(createCheckListItem(item, toDo));
         });
+
+        Sortable.create(container, {
+            draggable: '.check-item',
+            fallbackAxis: 'y',
+            forceFallback: true,
+            onEnd: function (evt) {
+                const oldIndex = evt.item.getAttribute('data-order');
+                _resetAttributes(Array.from(container.querySelectorAll('.check-item')), 'data-order');
+                const newIndex = evt.item.getAttribute('data-order');
+                toDo.reorderCheckItems(oldIndex, newIndex);
+            }
+        })
 
         return container;
     }
@@ -1128,15 +1152,8 @@ const UserInterface = (function () {
 
         addChecklistItemBtn.addEventListener('click', () => {
             addChecklistItemBtn.replaceWith(addPopUp);
+            mainLayout.shiftLayout();
             addInput.focus();
-            
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
         });
 
         addConfirmBtn.addEventListener('click', (e) => {
@@ -1147,14 +1164,7 @@ const UserInterface = (function () {
                 addPopUp.replaceWith(addChecklistItemBtn);
 
                 addForm.reset();
-                
-                new Masonry( main, {
-                    itemSelector: '.to-do',
-                    columnWidth: 250,
-                    horizontalOrder: true,
-                    gutter: 20,
-                    fitWidth: true,
-                });
+                mainLayout.shiftLayout();
             }
         });
 
@@ -1162,13 +1172,7 @@ const UserInterface = (function () {
             e.preventDefault();
             addForm.reset();
             addPopUp.replaceWith(addChecklistItemBtn);
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
+            mainLayout.shiftLayout();
         })
 
         checkBox.addEventListener('click', () => {
@@ -1195,19 +1199,12 @@ const UserInterface = (function () {
                 if (deleteDialog.returnValue) {
                     List.deleteTodo(toDo);
                     const toDoItem = deleteBtn.parentElement.parentElement;
-                    main.removeChild(toDoItem);
+                    mainLayout.remove(toDoItem);
+                    mainLayout.layout();
                     if (!main.hasChildNodes()) {
                         _renderEmptyMessage();
                         return;
                     }
-                    const toDoItems = main.querySelectorAll('div.to-do');
-                    _resetAttributes(Array.from(toDoItems), 'data-index');
-                    new Masonry( main, {
-                        itemSelector: '.to-do',
-                        columnWidth: 250,
-                        horizontalOrder: true,
-                        gutter: 20,
-                    });
                 }
             }, {once: true});
         })
@@ -1270,39 +1267,6 @@ const UserInterface = (function () {
         buttonsBox.appendChild(deleteBtn);
 
         container.classList.add('to-do');
-
-        container.addEventListener('dragstart', () => {
-
-        });
-
-        container.addEventListener('dragover', (e) => {
-            container.classList.add('drop-zone');
-        });
-
-        container.addEventListener('dragleave', (e) => {
-            container.classList.remove('drop-zone')
-        });
-
-        container.addEventListener('dragend', (e) => {
-            const oldIndex = container.getAttribute('data-index');
-            _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
-            const newIndex = container.getAttribute('data-index');
-            List.reorderToDos(oldIndex, newIndex);
-            main.querySelectorAll('div.to-do').forEach((item) => {
-                item.classList.remove('drop-zone');
-            });
-        })
-
-        container.addEventListener('drop', () => {
-            new Masonry( main, {
-                itemSelector: '.to-do',
-                columnWidth: 250,
-                horizontalOrder: true,
-                gutter: 20,
-                fitWidth: true,
-            });
-        })
-
         container.append(titleBox);
         container.append(project);
         container.append(description);
@@ -1319,6 +1283,21 @@ const UserInterface = (function () {
         const projectNode = document.createElement('div');
         projectNode.setAttribute('data-id', List.getProjects().length);
         const newProject = List.createProject(name);
+
+        const moveIconContainer = document.createElement('div');
+
+        const moveIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        moveIcon.setAttribute('viewBox', '0 0 22 22');
+        moveIcon.classList.add('move-icon');
+        const moveIconTitle = document.createElement('title');
+        moveIconTitle.textContent = 'heart';
+        const moveIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+        moveIconPath.setAttribute('d', "M12 20H10V19H9V18H8V17H7V16H6V15H5V14H4V13H3V12H2V10H1V5H2V4H3V3H4V2H9V3H10V4H12V3H13V2H18V3H19V4H20V5H21V10H20V12H19V13H18V14H17V15H16V16H15V17H14V18H13V19H12V20M5 11V12H6V13H7V14H8V15H9V16H10V17H12V16H13V15H14V14H15V13H16V12H17V11H18V9H19V6H18V5H17V4H14V5H13V6H12V7H10V6H9V5H8V4H5V5H4V6H3V9H4V11H5Z");
+        moveIcon.appendChild(moveIconTitle);
+        moveIcon.appendChild(moveIconPath);
+
+        moveIconContainer.appendChild(moveIcon);
         
         const popUpBtn = document.createElement('button');
         popUpBtn.classList.add('pop-up');
@@ -1345,6 +1324,7 @@ const UserInterface = (function () {
 
         projectNode.classList.add('project');
         projectNode.setAttribute('data-name', newProject.name);
+        projectNode.appendChild(moveIconContainer);
         projectNode.appendChild(projectText);
         projectNode.appendChild(popUpBtn);
 
@@ -1479,56 +1459,29 @@ const UserInterface = (function () {
             deleteDialog.addEventListener('close', () => {
                 if (deleteDialog.returnValue) {
                     let toDoItems = main.querySelectorAll('.to-do');
-                    let index = 0;
-                    Array.from(toDoItems).forEach((item) => {
-                        if (List.getToDos()[index].project === newProject) {
-                            main.removeChild(item);
-                        }
-                        index++;
-                    });
-        
-                    _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
-                    projectItem.remove();
-        
+
+                    const toRemove = Array.from(toDoItems).filter(item => item.querySelector('.project').textContent === newProject.name);
                     List.deleteProject(newProject);
-        
-                    if (main.hasAttribute('data-project')) {
+
+                    mainLayout.remove(toRemove);
+
+                    if (!main.hasAttribute('data-project')) {
+                        mainLayout.layout();
+                    } else {
                         main.removeAttribute('data-project');
                         main.removeAttribute('data-date');
                         _retitleMain('home');
                         renderAll();
-                    };
-        
-                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id')
-        
-                    new Masonry( main, {
-                        itemSelector: '.to-do',
-                        columnWidth: 250,
-                        horizontalOrder: true,
-                        gutter: 20,
-                        fitWidth: true,
-                    });
-    
+                    }
+
+                    _resetAttributes(Array.from(document.querySelector('div.projects').querySelectorAll('div.project')), 'data-id');
+
+                    projectItem.remove();
+
                 }
             }, {once: true});
             
         });
-
-        projectNode.setAttribute('draggable', 'true');
-        
-        projectNode.addEventListener('dragstart', (e) => {
-            projectNode.style.opacity = 0.5;
-        });
-
-        projectNode.addEventListener('dragend', (e) => {
-            projectNode.style.opacity = 1;
-        });
-
-        projectNode.addEventListener('drop', () => {
-            const projectNames = Array.from(document.querySelector('div.projects').querySelectorAll('div.project')).map((item) => item.querySelector('div.name').textContent);
-            List.reorderProjects(projectNames);
-        });
-
         return projectNode;
     }
 
@@ -1537,7 +1490,8 @@ const UserInterface = (function () {
         const main = document.querySelector('#main');
         main.textContent = '';
         List.getToDos().forEach((item) => {
-            main.appendChild(createToDo(item));
+            const newNode = createToDo(item);
+            main.appendChild(newNode);
         })
         if (!main.hasChildNodes()){
             _renderEmptyMessage();
@@ -1546,15 +1500,21 @@ const UserInterface = (function () {
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
 
-        mainSortable.option('disabled', false);
-
-        new Masonry( main, {
+        mainLayout = new Packery(main, {
             itemSelector: '.to-do',
             columnWidth: 250,
-            horizontalOrder: true,
-            gutter: 20,
-            fitWidth: true,
-        });
+            gutter: 20
+        })
+
+        main.querySelectorAll('.to-do').forEach((item) => {
+            const draggie = new Draggabilly(item, {
+                containment: main
+            })
+            mainLayout.bindDraggabillyEvents(draggie);
+        })
+
+        mainLayout.on('dragItemPositioned', reorderAll );
+        mainLayout.on('removeComplete', reorderAll );
     }
 
     const renderProjectItems = function (project) {
@@ -1573,15 +1533,48 @@ const UserInterface = (function () {
         const toDoItems = main.querySelectorAll('div.to-do');
         _resetAttributes(Array.from(toDoItems), 'data-index');
 
-        mainSortable.option('disabled', true);
+        console.log(mainLayout);
 
-        new Masonry( main, {
+        mainLayout = new Packery(main, {
             itemSelector: '.to-do',
             columnWidth: 250,
-            horizontalOrder: true,
-            gutter: 20,
-            fitWidth: true,
+            gutter: 20
+        })
+
+        main.querySelectorAll('.to-do').forEach((item) => {
+            const draggie = new Draggabilly(item, {
+                containment: main
+            })
+            mainLayout.bindDraggabillyEvents(draggie);
+        })
+
+        mainLayout.on('removeComplete', () => {
+            if (main.hasAttribute('data-project') || main.hasAttribute('data-date')) {
+                console.log(main.querySelectorAll('.to-do'));
+                _resetAttributes(Array.from(main.querySelectorAll('.to-do')), 'data-index');
+            }
         });
+    }
+
+    function syncDataIndexes() {
+        let index = 0;
+        mainLayout.getItemElements().forEach((item) => {
+            item.setAttribute('data-index', index);
+            index++;
+        })
+    }
+
+    function reorderAll () {
+        const main = document.querySelector('#main');
+        if (!main.hasAttribute('data-project') && !main.hasAttribute('data-date')) {
+            console.log(mainLayout.getItemElements());
+            const newIndexes = mainLayout.getItemElements().map((item) => +item.getAttribute('data-index'));
+            console.log(newIndexes);
+            List.reorderAll(newIndexes);
+            console.log(List.getToDos());
+            syncDataIndexes();
+            StorageController.updateStorage();
+        }
     }
     
     const editToDo = function (toDo, newTitle, newDescription, newDueDate, newPriority, newProject) {

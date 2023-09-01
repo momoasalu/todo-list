@@ -28,7 +28,9 @@
     "@shopify/draggable": "^1.0.0-beta.8",
     "agnostic-draggable": "^1.4.6",
     "date-fns": "^2.30.0",
+    "draggabilly": "^3.0.0",
     "masonry-layout": "^4.2.2",
-    "sortablejs": "^1.15.0"
+    "packery": "^2.1.2",
+    "sortable-axis": "^1.0.0"
   }
 }
